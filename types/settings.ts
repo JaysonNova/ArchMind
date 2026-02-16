@@ -67,3 +67,102 @@ export interface AvailableModelsResponse {
   message?: string;
 }
 
+// ============================================
+// AI 模型提供商配置相关类型
+// ============================================
+
+export type AIProviderType =
+  | 'anthropic'
+  | 'openai'
+  | 'google'
+  | 'deepseek'
+  | 'qwen'
+  | 'wenxin'
+  | 'glm'
+  | 'ollama'
+  | 'custom'  // 自定义第三方 API
+
+// 自定义 API 配置（用于第三方中转站）
+export interface CustomAPIConfig {
+  id: string  // 唯一标识，如 "custom-openai-proxy"
+  name: string  // 用户自定义名称
+  baseUrl: string  // API 地址
+  apiKey?: string  // API Key（可选，有些中转站不需要）
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AIProviderConfig {
+  id: AIProviderType
+  name: string
+  description: string
+  website: string
+  authType: 'api_key' | 'base_url' | 'both'
+  apiKeyPlaceholder?: string
+  baseUrlPlaceholder?: string
+  defaultBaseUrl?: string
+  supportsCustomUrl?: boolean  // 是否支持自定义 Base URL（中转站）
+  models: AIModelDefinition[]
+}
+
+export interface AIModelDefinition {
+  id: string
+  name: string
+  description: string
+  capabilities: {
+    maxContextLength: number
+    supportsStreaming: boolean
+    supportsStructuredOutput: boolean
+    supportsVision: boolean
+    supportedLanguages: string[]
+  }
+  costEstimate: {
+    input: string
+    output: string
+  }
+}
+
+// 用户保存的 API 配置（存储到数据库）
+export interface UserAPIConfig {
+  provider: AIProviderType
+  apiKey?: string  // 加密存储
+  baseUrl?: string
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// API 配置请求/响应类型
+export interface SaveAPIConfigRequest {
+  provider: AIProviderType
+  apiKey?: string
+  baseUrl?: string
+  enabled?: boolean
+}
+
+export interface APIConfigResponse {
+  success: boolean
+  data?: UserAPIConfig
+  message?: string
+}
+
+export interface AllAPIConfigsResponse {
+  success: boolean
+  data?: UserAPIConfig[]
+  message?: string
+}
+
+// 验证 API 连接请求
+export interface ValidateAPIRequest {
+  provider: AIProviderType
+  apiKey?: string
+  baseUrl?: string
+}
+
+export interface ValidateAPIResponse {
+  success: boolean
+  message?: string
+  availableModels?: string[]
+}
+

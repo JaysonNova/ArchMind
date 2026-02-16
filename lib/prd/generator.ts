@@ -18,6 +18,8 @@ export interface PRDGenerationOptions {
   useRAG?: boolean;
   documentIds?: string[];
   topK?: number;
+  enableRefinement?: boolean; // 是否启用迭代优化
+  maxRefinementIterations?: number; // 最大迭代次数
 }
 
 export interface PRDGenerationResult {
@@ -43,6 +45,77 @@ export class PRDGenerator {
     if (embeddingAdapter) {
       this.ragRetriever = new RAGRetriever(embeddingAdapter)
     }
+  }
+
+  /**
+   * 估算文本的Token数量
+   * 简化估算：中文约2字符/token，英文约4字符/token
+   */
+  private estimateTokens (text: string): number {
+    const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length
+    const englishChars = text.length - chineseChars
+    return Math.ceil(chineseChars / 2 + englishChars / 4)
+  }
+
+  /**
+   * Token预算分配
+   */
+  private allocateTokenBudget (options?: PRDGenerationOptions) {
+    const totalBudget = options?.maxTokens || 8000
+
+    return {
+      systemPrompt: 1500, // 增强版系统提示词约1500 tokens
+      examples: 2000, // 2个few-shot示例约2000 tokens
+      context: 4000, // RAG上下文约4000 tokens
+      userInput: 500, // 用户输入约500 tokens
+      output: totalBudget - 8000 // 剩余用于输出
+    }
+  }
+
+  /**
+   * 智能上下文压缩
+   */
+  private compressContext (context: string, maxTokens: number = 4000): string {
+    const estimatedTokens = this.estimateTokens(context)
+
+    // 如果上下文符合预算，直接返回
+    if (estimatedTokens <= maxTokens) {
+      return context
+    }
+
+    // 按 --- 分割各个文档块
+    const sections = context.split('\n---\n')
+    const compressedSections: string[] = []
+    let currentTokens = 0
+
+    for (const section of sections) {
+      const sectionTokens = this.estimateTokens(section)
+
+      if (currentTokens + sectionTokens <= maxTokens) {
+        // 整个section可以加入
+        compressedSections.push(section)
+        currentTokens += sectionTokens
+      } else {
+        // 需要压缩这个section
+        // 保留前500字 + 后500字
+        if (section.length > 1000) {
+          const compressed =
+            section.substring(0, 500) + '\n...[中间内容省略]...\n' + section.substring(section.length - 500)
+          const compressedTokens = this.estimateTokens(compressed)
+
+          if (currentTokens + compressedTokens <= maxTokens) {
+            compressedSections.push(compressed)
+            currentTokens += compressedTokens
+          }
+        } else {
+          // section本身不长，但预算不够了，直接加入
+          compressedSections.push(section)
+          currentTokens += sectionTokens
+        }
+      }
+    }
+
+    return compressedSections.join('\n---\n')
   }
 
   /**
@@ -73,8 +146,12 @@ export class PRDGenerator {
       const retrievedChunks = await this.ragRetriever.retrieve(userInput, { topK, threshold: 0.7 })
 
       if (retrievedChunks.length > 0) {
-        backgroundContext = this.ragRetriever.summarizeResults(retrievedChunks)
+        const rawContext = this.ragRetriever.summarizeResults(retrievedChunks)
         references = Array.from(new Set(retrievedChunks.map(c => c.documentId)))
+
+        // 智能压缩上下文以符合Token预算
+        const budget = this.allocateTokenBudget(options)
+        backgroundContext = this.compressContext(rawContext, budget.context)
       }
     } else if (options?.documentIds && options.documentIds.length > 0) {
       // 使用指定的文档
@@ -82,11 +159,15 @@ export class PRDGenerator {
         options.documentIds.map(id => DocumentDAO.findById(id))
       )
 
-      backgroundContext = docs
+      const rawContext = docs
         .filter(d => d !== null)
         .map(d => d!.content || '')
         .filter(c => c.length > 0)
         .join('\n\n---\n\n')
+
+      // 智能压缩上下文
+      const budget = this.allocateTokenBudget(options)
+      backgroundContext = this.compressContext(rawContext, budget.context)
 
       references = options.documentIds
     }
@@ -168,7 +249,12 @@ export class PRDGenerator {
       const retrievedChunks = await this.ragRetriever.retrieve(userInput, { topK, threshold: 0.7 })
 
       if (retrievedChunks.length > 0) {
-        backgroundContext = this.ragRetriever.summarizeResults(retrievedChunks)
+        const rawContext = this.ragRetriever.summarizeResults(retrievedChunks)
+
+        // 智能压缩上下文
+        const budget = this.allocateTokenBudget(options)
+        backgroundContext = this.compressContext(rawContext, budget.context)
+
         references.push(...Array.from(new Set(retrievedChunks.map(c => c.documentId))))
       }
     } else if (options?.documentIds && options.documentIds.length > 0) {
@@ -177,11 +263,15 @@ export class PRDGenerator {
         options.documentIds.map(id => DocumentDAO.findById(id))
       )
 
-      backgroundContext = docs
+      const rawContext = docs
         .filter(d => d !== null)
         .map(d => d!.content || '')
         .filter(c => c.length > 0)
         .join('\n\n---\n\n')
+
+      // 智能压缩上下文
+      const budget = this.allocateTokenBudget(options)
+      backgroundContext = this.compressContext(rawContext, budget.context)
 
       references.push(...options.documentIds)
     }

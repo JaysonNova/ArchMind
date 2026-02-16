@@ -21,6 +21,14 @@ dist
 .DS_Store
 *.pem
 
+# IDE and tool configs
+.vscode/
+.idea/
+.claude/
+.iflycode/
+*.swp
+*.swo
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -50,4 +58,9 @@ next-env.d.ts
 # temp files
 /temp
 /minio
+
+# secrets and credentials (API keys, cloud credentials, etc.)
+.secrets/
 *.csv
+*.pem
+*.key

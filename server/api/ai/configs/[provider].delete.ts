@@ -1,0 +1,58 @@
+/**
+ * 删除 API 配置
+ * DELETE /api/ai/configs/:provider
+ */
+
+import { defineEventHandler, createError } from 'h3'
+import { UserAPIConfigDAO } from '~/lib/db/dao/user-api-config-dao'
+import type { AIProviderType } from '~/types/settings'
+import { AI_PROVIDERS } from '~/lib/ai/providers'
+
+function isValidProvider(provider: string): provider is AIProviderType {
+  return provider in AI_PROVIDERS
+}
+
+export default defineEventHandler(async (event) => {
+  try {
+    const provider = getRouterParam(event, 'provider')
+
+    if (!provider) {
+      throw createError({
+        statusCode: 400,
+        message: 'Provider is required'
+      })
+    }
+
+    if (!isValidProvider(provider)) {
+      throw createError({
+        statusCode: 400,
+        message: `Invalid provider: ${provider}`
+      })
+    }
+
+    const deleted = await UserAPIConfigDAO.delete(provider)
+
+    if (!deleted) {
+      return {
+        success: false,
+        message: 'Configuration not found'
+      }
+    }
+
+    return {
+      success: true,
+      message: 'API configuration deleted successfully'
+    }
+  } catch (error: any) {
+    console.error('Failed to delete API config:', error)
+
+    if (error.statusCode) {
+      throw error
+    }
+
+    return {
+      success: false,
+      message: error.message || 'Failed to delete API configuration'
+    }
+  }
+})

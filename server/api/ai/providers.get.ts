@@ -1,0 +1,16 @@
+/**
+ * 获取所有 AI 提供商配置信息
+ * GET /api/ai/providers
+ */
+
+import { defineEventHandler } from 'h3'
+import { getAllProviders } from '~/lib/ai/providers'
+
+export default defineEventHandler(() => {
+  const providers = getAllProviders()
+
+  return {
+    success: true,
+    data: providers
+  }
+})

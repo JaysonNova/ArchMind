@@ -10,6 +10,10 @@ import { ClaudeAdapter } from './adapters/claude'
 import { OpenAIAdapter } from './adapters/openai'
 import { GeminiAdapter } from './adapters/gemini'
 import { GLMAdapter } from './adapters/glm'
+import { DeepSeekAdapter } from './adapters/deepseek'
+import { QwenAdapter } from './adapters/qwen'
+import { WenxinAdapter } from './adapters/wenxin'
+import { OllamaAdapter } from './adapters/ollama'
 import type { AIModelAdapter } from '~/lib/ai/types'
 import type { AvailableModelInfo } from '~/types/settings'
 
@@ -17,7 +21,11 @@ export enum ModelProvider {
   CLAUDE = 'claude',
   OPENAI = 'openai',
   GEMINI = 'gemini',
-  GLM = 'glm'
+  GLM = 'glm',
+  DEEPSEEK = 'deepseek',
+  QWEN = 'qwen',
+  WENXIN = 'wenxin',
+  OLLAMA = 'ollama'
 }
 
 interface ModelConfig {
@@ -101,11 +109,47 @@ export class ModelManager {
 
     // GLM 适配器 - 为每个 GLM 模型创建实例
     if (config.glmApiKey) {
-      // 支持多个 GLM 模型，使用同一个 API Key
-      const glmModels = ['glm-4.7', 'glm-4.6v', 'glm-4.5-air']
+      const glmModels = ['glm-4.7', 'glm-4.6v', 'glm-4.5-air', 'glm-4-flash']
       for (const modelId of glmModels) {
         const glm = new GLMAdapter(config.glmApiKey as string, modelId)
         this.adapters.set(modelId, glm)
+      }
+    }
+
+    // DeepSeek 适配器
+    if (config.deepseekApiKey) {
+      const deepseekModels = ['deepseek-chat', 'deepseek-reasoner']
+      for (const modelId of deepseekModels) {
+        const deepseek = new DeepSeekAdapter(config.deepseekApiKey as string, modelId)
+        this.adapters.set(modelId, deepseek)
+      }
+    }
+
+    // 通义千问 (Qwen) 适配器
+    if (config.dashscopeApiKey) {
+      const qwenModels = ['qwen-max', 'qwen-plus', 'qwen-turbo']
+      for (const modelId of qwenModels) {
+        const qwen = new QwenAdapter(config.dashscopeApiKey as string, modelId)
+        this.adapters.set(modelId, qwen)
+      }
+    }
+
+    // 文心一言 (Wenxin) 适配器
+    // 注意：文心一言需要 API Key 和 Secret Key，格式为 "apiKey|secretKey"
+    if (config.baiduApiKey) {
+      const wenxinModels = ['ernie-4.0-8k', 'ernie-3.5-8k']
+      for (const modelId of wenxinModels) {
+        const wenxin = new WenxinAdapter(config.baiduApiKey as string, modelId)
+        this.adapters.set(modelId, wenxin)
+      }
+    }
+
+    // Ollama 本地模型适配器
+    if (config.ollamaBaseUrl) {
+      const ollamaModels = ['llama3.2', 'qwen2.5', 'deepseek-r1']
+      for (const modelId of ollamaModels) {
+        const ollama = new OllamaAdapter(config.ollamaBaseUrl as string, modelId)
+        this.adapters.set(`ollama-${modelId}`, ollama)
       }
     }
   }
@@ -241,4 +285,11 @@ export function getModelManager (config?: Record<string, any>): ModelManager {
     managerInstance.initializeAdapters(config)
   }
   return managerInstance
+}
+
+/**
+ * 重置模型管理器（主要用于测试或强制重新加载配置）
+ */
+export function resetModelManager (): void {
+  managerInstance = null
 }

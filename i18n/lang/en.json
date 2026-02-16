@@ -140,7 +140,8 @@
     "subtitle": "Manage your personal information and account security",
     "tabs": {
       "profile": "Profile",
-      "security": "Security"
+      "security": "Security",
+      "models": "AI Models"
     },
     "avatar": {
       "title": "Avatar",

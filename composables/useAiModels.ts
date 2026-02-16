@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { AvailableModelInfo, AvailableModelsResponse } from '~/types/settings'
 
 export function useAiModels () {
@@ -87,6 +87,22 @@ export function useAiModels () {
     const model = getModelInfo(selectedModel.value)
     return model
   })
+
+  // 监听 API 配置更新事件，自动刷新模型列表
+  const handleConfigUpdate = () => {
+    fetchAvailableModels()
+  }
+
+  // 在客户端添加事件监听
+  if (process.client) {
+    onMounted(() => {
+      window.addEventListener('api-config-updated', handleConfigUpdate)
+    })
+
+    onUnmounted(() => {
+      window.removeEventListener('api-config-updated', handleConfigUpdate)
+    })
+  }
 
   return {
     models,

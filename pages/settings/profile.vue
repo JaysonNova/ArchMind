@@ -16,6 +16,11 @@
           <TabsTrigger value="security">
             {{ $t('profile.tabs.security') }}
           </TabsTrigger>
+          <TabsTrigger value="models" as-child>
+            <NuxtLink to="/settings/models">
+              AI 模型
+            </NuxtLink>
+          </TabsTrigger>
         </TabsList>
 
         <!-- Profile Tab -->

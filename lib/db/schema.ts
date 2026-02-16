@@ -131,6 +131,24 @@ export const prdDocumentReferences = pgTable('prd_document_references', {
 })
 
 // ============================================
+// 用户 API 配置表（存储第三方模型 API Key）
+// ============================================
+export const userApiConfigs = pgTable('user_api_configs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  provider: varchar('provider', { length: 50 }).notNull().unique(),
+  apiKeyEncrypted: text('api_key_encrypted'),
+  baseUrl: varchar('base_url', { length: 500 }),
+  enabled: boolean('enabled').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    providerIdx: index('idx_user_api_configs_provider').on(table.provider),
+    enabledIdx: index('idx_user_api_configs_enabled').on(table.enabled)
+  }
+})
+
+// ============================================
 // 系统配置表
 // ============================================
 export const systemConfig = pgTable('system_config', {

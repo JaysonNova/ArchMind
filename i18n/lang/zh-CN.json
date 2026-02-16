@@ -140,7 +140,8 @@
     "subtitle": "管理你的个人信息和账号安全",
     "tabs": {
       "profile": "个人资料",
-      "security": "安全设置"
+      "security": "安全设置",
+      "models": "AI 模型"
     },
     "avatar": {
       "title": "头像",
