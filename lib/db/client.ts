@@ -1,0 +1,96 @@
+/**
+ * PostgreSQL 数据库客户端
+ * 使用 pg 连接池管理数据库连接
+ */
+
+import { Pool } from 'pg'
+import type { PoolConfig, PoolClient, QueryResult, QueryResultRow } from 'pg'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import * as schema from './schema'
+
+export class DatabaseClient {
+  private pool: Pool
+  private static instance: DatabaseClient | undefined
+
+  private constructor () {
+    const poolConfig: PoolConfig = {
+      connectionString: process.env.DATABASE_URL,
+      min: Number(process.env.DATABASE_POOL_MIN) || 2,
+      max: Number(process.env.DATABASE_POOL_MAX) || 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000
+    }
+
+    this.pool = new Pool(poolConfig)
+
+    // 连接池错误处理
+    this.pool.on('error', (err) => {
+      console.error('Unexpected error on idle client', err)
+      process.exit(-1)
+    })
+  }
+
+  public static getInstance (): DatabaseClient {
+    if (!DatabaseClient.instance) {
+      DatabaseClient.instance = new DatabaseClient()
+    }
+    return DatabaseClient.instance
+  }
+
+  public getPool (): Pool {
+    return this.pool
+  }
+
+  // 执行查询
+  public query<T extends QueryResultRow = any> (text: string, params?: any[]): Promise<QueryResult<T>> {
+    return this.pool.query<T>(text, params)
+  }
+
+  // 获取单个客户端连接（用于事务）
+  public getClient (): Promise<PoolClient> {
+    return this.pool.connect()
+  }
+
+  // 事务支持
+  public async transaction<T> (fn: (client: PoolClient) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect()
+    try {
+      await client.query('BEGIN')
+      const result = await fn(client)
+      await client.query('COMMIT')
+      return result
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
+  // 健康检查
+  public async healthCheck (): Promise<boolean> {
+    try {
+      const result = await this.pool.query('SELECT NOW()')
+      console.log('✅ Database connected at:', result.rows[0].now)
+      return true
+    } catch (error) {
+      console.error('❌ Database connection failed:', error)
+      return false
+    }
+  }
+
+  // 关闭连接池
+  public async close (): Promise<void> {
+    await this.pool.end()
+    console.log('Database pool closed')
+  }
+}
+
+// 导出单例实例
+export const dbClient = DatabaseClient.getInstance()
+export const pool = dbClient.getPool()
+
+// 导出 Drizzle ORM 实例
+export const db = drizzle(pool, { schema })
+
+export default dbClient

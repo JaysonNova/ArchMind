@@ -1,0 +1,47 @@
+/**
+ * JWT 工具函数
+ * 用于生成和验证 JSON Web Token
+ */
+
+import jwt from 'jsonwebtoken'
+import type { JwtPayload } from '~/types/auth'
+
+const { sign, verify } = jwt
+
+const JWT_SECRET = process.env.JWT_SECRET || 'archmind-default-secret-change-in-production'
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
+
+/**
+ * 生成 JWT Token
+ * @param payload Token 载荷
+ * @returns 签名后的 Token
+ */
+export function generateToken(payload: { userId: string }): string {
+  // jwt sign accepts expiresIn as string (e.g., '7d') or number (seconds)
+  // @ts-expect-error - jsonwebtoken types are too strict, expiresIn accepts string
+  return sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
+}
+
+/**
+ * 验证 JWT Token
+ * @param token 待验证的 Token
+ * @returns 解码后的载荷，验证失败返回 null
+ */
+export function verifyToken(token: string): JwtPayload | null {
+  try {
+    const decoded = verify(token, JWT_SECRET) as JwtPayload
+    return decoded
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 从 Token 中提取用户 ID
+ * @param token JWT Token
+ * @returns 用户 ID，无效则返回 null
+ */
+export function getUserIdFromToken(token: string): string | null {
+  const payload = verifyToken(token)
+  return payload?.userId ?? null
+}

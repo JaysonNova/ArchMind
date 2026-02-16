@@ -1,0 +1,254 @@
+ai_models:
+  # 默认模型 - 必须是已启用的模型
+  default: glm-4.7
+
+  # 降级策略（按优先级排序）
+  fallback:
+    - glm-4.5-air
+    - gpt-4o
+    - claude-3.5-sonnet
+
+  # 任务类型偏好（选择模型时的优先级）
+  preferences:
+    prd_generation:
+      - claude-3.5-sonnet
+      - gpt-4o
+      - glm-4.7
+    chinese_content:
+      - glm-4.7
+      - glm-4.5-air
+      - qwen-max
+      - wenxin-4.0
+    large_document:
+      - gemini-1.5-pro
+      - claude-3.5-sonnet
+    cost_sensitive:
+      - glm-4.5-air
+      - deepseek-v2
+      - qwen-max
+    privacy_mode:
+      - ollama-llama3
+      - ollama-qwen
+
+  # 模型列表配置
+  # 模型列表配置
+  models:
+    # 智谱 ChatGLM 4.7 (推理最强)
+    glm-4.7:
+      enabled: true
+      name: "ChatGLM 4.7"
+      provider: "Zhipu AI"
+      description: "最新推理模型，支持思考模式，适合复杂逻辑分析和 PRD 生成"
+      api_key_env: "GLM_API_KEY"
+      capabilities:
+        maxContextLength: 128000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: false
+        supportedLanguages: ["zh", "en"]
+      costEstimate:
+        input: "¥0.0001/token"
+        output: "¥0.0001/token"
+      embedding:
+        supported: true
+        provider: "glm"
+        model: "embedding-3"
+        dimensions: 2048
+    # 智谱 ChatGLM 4.6v (图像理解)
+    glm-4.6v:
+      enabled: true
+      name: "ChatGLM 4.6v"
+      provider: "Zhipu AI"
+      description: "多模态模型，支持图像理解，600万 tokens 额度"
+      api_key_env: "GLM_API_KEY"
+      capabilities:
+        maxContextLength: 128000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en"]
+      costEstimate:
+        input: "¥0.00004/token"
+        output: "¥0.0001/token"
+      embedding:
+        supported: true
+        provider: "glm"
+        model: "embedding-3"
+        dimensions: 2048
+
+    # 智谱 ChatGLM 4.5 Air (经济版)
+    glm-4.5-air:
+      enabled: true
+      name: "ChatGLM 4.5 Air"
+      provider: "Zhipu AI"
+      description: "经济版模型，最低成本，适合快速原型和成本敏感场景，1200万 tokens 额度"
+      api_key_env: "GLM_API_KEY"
+      capabilities:
+        maxContextLength: 128000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: false
+        supportedLanguages: ["zh", "en"]
+      costEstimate:
+        input: "¥0.00002/token"
+        output: "¥0.00006/token"
+      embedding:
+        supported: true
+        provider: "glm"
+        model: "embedding-3"
+        dimensions: 2048
+
+    # Claude 3.5 Sonnet
+    claude-3.5-sonnet:
+      enabled: false
+      name: "Claude 3.5 Sonnet"
+      provider: "Anthropic"
+      description: "企业级推理能力，支持 200K 上下文，最适合复杂逻辑分析"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.003/1K tokens"
+        output: "¥0.015/1K tokens"
+      embedding:
+        supported: false
+
+    # OpenAI GPT-4o
+    gpt-4o:
+      enabled: false
+      name: "GPT-4o"
+      provider: "OpenAI"
+      description: "多模态 AI，图片理解能力强，适合需要图像分析的任务"
+      api_key_env: "OPENAI_API_KEY"
+      capabilities:
+        maxContextLength: 128000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.005/1K tokens"
+        output: "¥0.015/1K tokens"
+      embedding:
+        supported: true
+        provider: "openai"
+        model: "text-embedding-3-small"
+        dimensions: 1536
+
+    # Google Gemini 1.5 Pro
+    gemini-1.5-pro:
+      enabled: false
+      name: "Gemini 1.5 Pro"
+      provider: "Google"
+      description: "超大上下文窗口 (100K+)，适合处理大型文档"
+      api_key_env: "GOOGLE_API_KEY"
+      capabilities:
+        maxContextLength: 1000000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.0013/1K tokens (first 128k)"
+        output: "¥0.0053/1K tokens"
+      embedding:
+        supported: false
+
+    # 阿里云通义千问
+    qwen-max:
+      enabled: false
+      name: "通义千问 Qwen Max"
+      provider: "Alibaba"
+      description: "中文理解能力强，适合中文内容生成"
+      api_key_env: "DASHSCOPE_API_KEY"
+      capabilities:
+        maxContextLength: 30000
+        supportsStreaming: true
+        supportsStructuredOutput: false
+        supportsVision: true
+        supportedLanguages: ["zh", "en"]
+      costEstimate:
+        input: "¥0.02/1K tokens"
+        output: "¥0.06/1K tokens"
+      embedding:
+        supported: false
+
+    # 百度文心一言
+    wenxin-4.0:
+      enabled: false
+      name: "文心一言 4.0"
+      provider: "Baidu"
+      description: "百度自研大模型，中文理解深度强"
+      api_key_env: "BAIDU_API_KEY"
+      capabilities:
+        maxContextLength: 30000
+        supportsStreaming: true
+        supportsStructuredOutput: false
+        supportsVision: false
+        supportedLanguages: ["zh", "en"]
+      costEstimate:
+        input: "¥0.01/1K tokens"
+        output: "¥0.03/1K tokens"
+      embedding:
+        supported: false
+
+    # DeepSeek
+    deepseek-v2:
+      enabled: false
+      name: "DeepSeek V2"
+      provider: "DeepSeek"
+      description: "高性价比模型，适合成本敏感的场景"
+      api_key_env: "DEEPSEEK_API_KEY"
+      capabilities:
+        maxContextLength: 128000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: false
+        supportedLanguages: ["zh", "en"]
+      costEstimate:
+        input: "¥0.0005/1K tokens"
+        output: "¥0.002/1K tokens"
+      embedding:
+        supported: false
+
+    # Ollama 本地模型
+    ollama-llama3:
+      enabled: false
+      name: "Llama 3 (本地)"
+      provider: "Meta (via Ollama)"
+      description: "完全本地运行，无隐私风险"
+      api_key_env: "OLLAMA_BASE_URL"
+      capabilities:
+        maxContextLength: 8192
+        supportsStreaming: true
+        supportsStructuredOutput: false
+        supportsVision: false
+        supportedLanguages: ["en"]
+      costEstimate:
+        input: "本地免费"
+        output: "本地免费"
+      embedding:
+        supported: false
+
+    ollama-qwen:
+      enabled: false
+      name: "通义千问 (本地)"
+      provider: "Alibaba (via Ollama)"
+      description: "本地运行的中文模型"
+      api_key_env: "OLLAMA_BASE_URL"
+      capabilities:
+        maxContextLength: 32000
+        supportsStreaming: true
+        supportsStructuredOutput: false
+        supportsVision: false
+        supportedLanguages: ["zh", "en"]
+      costEstimate:
+        input: "本地免费"
+        output: "本地免费"
+      embedding:
+        supported: false
+

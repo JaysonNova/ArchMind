@@ -1,0 +1,404 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Vega + Neutral theme colors */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 9%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    /* Custom design tokens */
+    --gradient-primary: linear-gradient(135deg, #262626 0%, #404040 100%);
+    --gradient-secondary: linear-gradient(135deg, #525252 0%, #737373 100%);
+    --gradient-accent: linear-gradient(135deg, #a3a3a3 0%, #d4d4d4 100%);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 0 20px rgba(0, 0, 0, 0.1);
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 0 0% 9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 83%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --shadow-glow: 0 0 30px rgba(255, 255, 255, 0.1);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* System font stack for crisp, clean English and numbers */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Headings with slightly more character */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-feature-settings: 'kern' 1;
+  }
+
+  /* Code with professional monospace */
+  code, pre {
+    font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9em;
+  }
+
+  /* Ensure all numbers are tabular for alignment */
+  span, div, p, li, td, th, a, button, label, input, textarea {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Tiptap / ProseMirror editor styles - Enhanced prose-like styling */
+  .prd-editor-content .ProseMirror {
+    @apply text-foreground leading-7 min-h-full;
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+
+  .prd-editor-content .ProseMirror:focus {
+    outline: none;
+  }
+
+  .prd-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+    @apply text-muted-foreground pointer-events-none float-left h-0;
+    content: attr(data-placeholder);
+  }
+
+  .prd-editor-content .ProseMirror h1 {
+    @apply text-3xl font-bold mt-8 mb-4 text-foreground tracking-tight;
+    line-height: 1.3;
+  }
+
+  .prd-editor-content .ProseMirror h2 {
+    @apply text-2xl font-bold mt-7 mb-4 pb-2 text-foreground border-b border-border;
+    line-height: 1.35;
+  }
+
+  .prd-editor-content .ProseMirror h3 {
+    @apply text-xl font-semibold mt-6 mb-3 text-foreground;
+    line-height: 1.4;
+  }
+
+  .prd-editor-content .ProseMirror h4 {
+    @apply text-lg font-semibold mt-5 mb-2 text-foreground;
+    line-height: 1.45;
+  }
+
+  .prd-editor-content .ProseMirror h5,
+  .prd-editor-content .ProseMirror h6 {
+    @apply text-base font-semibold mt-4 mb-2 text-foreground;
+    line-height: 1.5;
+  }
+
+  .prd-editor-content .ProseMirror p {
+    @apply my-4 text-foreground;
+    line-height: 1.8;
+  }
+
+  .prd-editor-content .ProseMirror ul {
+    @apply my-4 pl-7 space-y-2;
+    list-style-type: disc;
+  }
+
+  .prd-editor-content .ProseMirror ol {
+    @apply my-4 pl-7 space-y-2;
+    list-style-type: decimal;
+  }
+
+  .prd-editor-content .ProseMirror li {
+    @apply text-foreground;
+    line-height: 1.75;
+  }
+
+  .prd-editor-content .ProseMirror li p {
+    @apply my-1;
+  }
+
+  .prd-editor-content .ProseMirror li::marker {
+    @apply text-muted-foreground;
+  }
+
+  .prd-editor-content .ProseMirror code {
+    @apply px-1.5 py-0.5 rounded text-sm font-medium bg-muted text-foreground border border-border;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace;
+  }
+
+  .prd-editor-content .ProseMirror pre {
+    @apply rounded-lg p-4 overflow-x-auto my-4 bg-muted border border-border text-sm;
+    line-height: 1.7;
+  }
+
+  .prd-editor-content .ProseMirror pre code {
+    @apply bg-transparent border-0 p-0 text-inherit;
+  }
+
+  .prd-editor-content .ProseMirror blockquote {
+    @apply border-l-4 border-primary/50 pl-5 py-1 my-4 italic text-muted-foreground bg-muted/30 rounded-r;
+    font-style: italic;
+  }
+
+  .prd-editor-content .ProseMirror blockquote p {
+    @apply my-2;
+  }
+
+  .prd-editor-content .ProseMirror a {
+    @apply text-primary underline underline-offset-2 hover:text-primary/80 transition-colors;
+  }
+
+  .prd-editor-content .ProseMirror hr {
+    @apply my-8 border-border;
+  }
+
+  .prd-editor-content .ProseMirror strong {
+    @apply font-bold text-foreground;
+  }
+
+  .prd-editor-content .ProseMirror em {
+    @apply italic;
+  }
+
+  /* First paragraph after heading - reduce top margin */
+  .prd-editor-content .ProseMirror h1 + p,
+  .prd-editor-content .ProseMirror h2 + p,
+  .prd-editor-content .ProseMirror h3 + p,
+  .prd-editor-content .ProseMirror h4 + p {
+    @apply mt-2;
+  }
+
+  /* Table styles */
+  .prd-editor-content .ProseMirror table {
+    @apply w-full border-collapse my-5 text-sm border border-border rounded-lg overflow-hidden;
+  }
+
+  .prd-editor-content .ProseMirror th {
+    @apply border border-border px-4 py-2.5 text-left font-semibold bg-muted text-foreground;
+  }
+
+  .prd-editor-content .ProseMirror td {
+    @apply border border-border px-4 py-2.5 text-foreground;
+  }
+
+  .prd-editor-content .ProseMirror tr:hover td {
+    @apply bg-muted/30 transition-colors;
+  }
+
+  /* Table resize handle */
+  .prd-editor-content .ProseMirror .column-resize-handle {
+    @apply absolute top-0 right-[-2px] bottom-0 w-1 bg-primary pointer-events-none;
+  }
+
+  .prd-editor-content .ProseMirror .selectedCell::after {
+    @apply absolute inset-0 bg-primary/10 pointer-events-none;
+    content: '';
+  }
+
+  .prd-editor-content .ProseMirror .tableWrapper {
+    @apply overflow-x-auto my-5;
+  }
+
+  /* Animated gradient background - Neutral grayscale */
+  .gradient-bg {
+    background: linear-gradient(135deg, #262626 0%, #404040 50%, #525252 100%);
+    background-size: 200% 200%;
+    animation: gradient-shift 15s ease infinite;
+  }
+
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .dark .glass {
+    background: rgba(30, 30, 46, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Glow effects */
+  .glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .glow-hover {
+    transition: box-shadow 0.3s ease;
+  }
+
+  .glow-hover:hover {
+    box-shadow: var(--shadow-glow);
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.6s ease-out;
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 0.6s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.4s ease-out;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Stagger delays for list animations */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}

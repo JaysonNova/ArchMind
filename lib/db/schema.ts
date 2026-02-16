@@ -1,0 +1,319 @@
+/**
+ * Drizzle ORM Schema 定义
+ * PostgreSQL 数据库表结构
+ */
+
+import { pgTable, uuid, varchar, text, integer, boolean, timestamp, jsonb, decimal, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+
+// ============================================
+// 工作区表
+// ============================================
+export const workspaces = pgTable('workspaces', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull().unique(),
+  description: text('description'),
+  icon: varchar('icon', { length: 10 }).default('📁'),
+  color: varchar('color', { length: 20 }).default('#3B82F6'),
+  isDefault: boolean('is_default').default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    isDefaultIdx: index('idx_workspaces_is_default').on(table.isDefault)
+  }
+})
+
+// ============================================
+// 用户表
+// ============================================
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  username: varchar('username', { length: 50 }).notNull().unique(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  fullName: varchar('full_name', { length: 100 }),
+  avatarUrl: text('avatar_url'),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    emailIdx: index('idx_users_email').on(table.email),
+    usernameIdx: index('idx_users_username').on(table.username)
+  }
+})
+
+// ============================================
+// 文档表
+// ============================================
+export const documents = pgTable('documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  filePath: text('file_path').notNull(),
+  fileType: varchar('file_type', { length: 20 }).notNull(),
+  fileSize: integer('file_size').notNull(),
+  content: text('content'),
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  status: varchar('status', { length: 20 }).default('uploaded'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    userIdIdx: index('idx_documents_user_id').on(table.userId),
+    workspaceIdIdx: index('idx_documents_workspace_id').on(table.workspaceId),
+    statusIdx: index('idx_documents_status').on(table.status),
+    createdAtIdx: index('idx_documents_created_at').on(table.createdAt)
+  }
+})
+
+// ============================================
+// 文档块表（用于向量检索）
+// ============================================
+export const documentChunks = pgTable('document_chunks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  documentId: uuid('document_id').references(() => documents.id, { onDelete: 'cascade' }),
+  chunkIndex: integer('chunk_index').notNull(),
+  content: text('content').notNull(),
+  // embedding: vector('embedding', { dimensions: 1536 }), // pgvector 类型
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    documentIdIdx: index('idx_chunks_document_id').on(table.documentId)
+  }
+})
+
+// ============================================
+// PRD 文档表
+// ============================================
+export const prdDocuments = pgTable('prd_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  content: text('content').notNull(),
+  userInput: text('user_input').notNull(),
+  modelUsed: varchar('model_used', { length: 100 }).notNull(),
+  generationTime: integer('generation_time'),
+  tokenCount: integer('token_count'),
+  estimatedCost: decimal('estimated_cost', { precision: 10, scale: 4 }),
+  status: varchar('status', { length: 20 }).default('draft'),
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    userIdIdx: index('idx_prd_user_id').on(table.userId),
+    workspaceIdIdx: index('idx_prd_workspace_id').on(table.workspaceId),
+    createdAtIdx: index('idx_prd_created_at').on(table.createdAt),
+    modelUsedIdx: index('idx_prd_model_used').on(table.modelUsed)
+  }
+})
+
+// ============================================
+// PRD 文档引用表
+// ============================================
+export const prdDocumentReferences = pgTable('prd_document_references', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  prdId: uuid('prd_id').references(() => prdDocuments.id, { onDelete: 'cascade' }),
+  documentId: uuid('document_id').references(() => documents.id, { onDelete: 'cascade' }),
+  relevanceScore: decimal('relevance_score', { precision: 5, scale: 4 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    prdIdIdx: index('idx_prd_refs_prd_id').on(table.prdId),
+    documentIdIdx: index('idx_prd_refs_document_id').on(table.documentId),
+    uniquePrdDoc: uniqueIndex('unique_prd_document').on(table.prdId, table.documentId)
+  }
+})
+
+// ============================================
+// 系统配置表
+// ============================================
+export const systemConfig = pgTable('system_config', {
+  key: varchar('key', { length: 100 }).primaryKey(),
+  value: jsonb('value').notNull(),
+  description: text('description'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+})
+
+// ============================================
+// 生成历史表
+// ============================================
+export const generationHistory = pgTable('generation_history', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  prdId: uuid('prd_id').references(() => prdDocuments.id, { onDelete: 'set null' }),
+  modelUsed: varchar('model_used', { length: 100 }).notNull(),
+  userInput: text('user_input').notNull(),
+  tokenCount: integer('token_count'),
+  estimatedCost: decimal('estimated_cost', { precision: 10, scale: 4 }),
+  generationTime: integer('generation_time'),
+  status: varchar('status', { length: 20 }).notNull(),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    createdAtIdx: index('idx_history_created_at').on(table.createdAt)
+  }
+})
+
+// ============================================
+// 对话表
+// ============================================
+export const conversations = pgTable('conversations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  summary: text('summary'),
+  messageCount: integer('message_count').default(0),
+  prdId: uuid('prd_id').references(() => prdDocuments.id, { onDelete: 'set null' }),
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    userIdIdx: index('idx_conversations_user_id').on(table.userId),
+    createdAtIdx: index('idx_conversations_created_at').on(table.createdAt)
+  }
+})
+
+// ============================================
+// 对话消息表
+// ============================================
+export const conversationMessages = pgTable('conversation_messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  conversationId: uuid('conversation_id').references(() => conversations.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 20 }).notNull(), // 'user' | 'assistant'
+  content: text('content').notNull(),
+  modelUsed: varchar('model_used', { length: 100 }),
+  useRAG: boolean('use_rag').default(false),
+  documentIds: text('document_ids'), // JSON array as string
+  prdContent: text('prd_content'),
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    conversationIdIdx: index('idx_conv_msgs_conversation_id').on(table.conversationId),
+    roleIdx: index('idx_conv_msgs_role').on(table.role)
+  }
+})
+
+// ============================================
+// 原型图表
+// ============================================
+export const prototypes = pgTable('prototypes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  prdId: uuid('prd_id').references(() => prdDocuments.id, { onDelete: 'set null' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  currentVersion: integer('current_version').default(1),
+  status: varchar('status', { length: 20 }).default('draft'),
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  prdIdIdx: index('idx_prototypes_prd_id').on(table.prdId),
+  userIdIdx: index('idx_prototypes_user_id').on(table.userId),
+  createdAtIdx: index('idx_prototypes_created_at').on(table.createdAt)
+}))
+
+// ============================================
+// 原型页面表
+// ============================================
+export const prototypePages = pgTable('prototype_pages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  prototypeId: uuid('prototype_id').references(() => prototypes.id, { onDelete: 'cascade' }).notNull(),
+  pageName: varchar('page_name', { length: 200 }).notNull(),
+  pageSlug: varchar('page_slug', { length: 100 }).notNull(),
+  htmlContent: text('html_content').notNull(),
+  sortOrder: integer('sort_order').default(0),
+  isEntryPage: boolean('is_entry_page').default(false),
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  prototypeIdIdx: index('idx_prototype_pages_prototype_id').on(table.prototypeId),
+  slugIdx: uniqueIndex('idx_prototype_pages_slug').on(table.prototypeId, table.pageSlug)
+}))
+
+// ============================================
+// 原型版本表
+// ============================================
+export const prototypeVersions = pgTable('prototype_versions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  prototypeId: uuid('prototype_id').references(() => prototypes.id, { onDelete: 'cascade' }).notNull(),
+  versionNumber: integer('version_number').notNull(),
+  pagesSnapshot: jsonb('pages_snapshot').notNull(),
+  commitMessage: text('commit_message'),
+  modelUsed: varchar('model_used', { length: 100 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  prototypeIdIdx: index('idx_prototype_versions_prototype_id').on(table.prototypeId),
+  versionIdx: uniqueIndex('idx_prototype_versions_number').on(table.prototypeId, table.versionNumber)
+}))
+
+// ============================================
+// 资源表
+// ============================================
+export const assets = pgTable('assets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+
+  // 基本信息
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+
+  // 文件信息
+  fileName: varchar('file_name', { length: 500 }).notNull(),
+  fileType: varchar('file_type', { length: 50 }).notNull(),
+  fileSize: integer('file_size').notNull(),
+
+  // 存储信息
+  storageProvider: varchar('storage_provider', { length: 50 }).default('minio'),
+  storageBucket: varchar('storage_bucket', { length: 200 }),
+  storageKey: varchar('storage_key', { length: 1000 }).notNull(),
+  contentHash: varchar('content_hash', { length: 64 }),
+
+  // 资源来源
+  source: varchar('source', { length: 20 }).notNull(),
+
+  // AI 生成相关
+  generationPrompt: text('generation_prompt'),
+  modelUsed: varchar('model_used', { length: 100 }),
+
+  // 元数据
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+
+  // 时间戳
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  userIdIdx: index('idx_assets_user_id').on(table.userId),
+  sourceIdx: index('idx_assets_source').on(table.source),
+  createdAtIdx: index('idx_assets_created_at').on(table.createdAt),
+  hashIdx: index('idx_assets_content_hash').on(table.contentHash)
+}))
+
+// ============================================
+// PRD-资源关联表
+// ============================================
+export const prdAssets = pgTable('prd_assets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  prdId: uuid('prd_id').references(() => prdDocuments.id, { onDelete: 'cascade' }).notNull(),
+  assetId: uuid('asset_id').references(() => assets.id, { onDelete: 'cascade' }).notNull(),
+
+  // 关联元数据
+  addedBy: varchar('added_by', { length: 20 }).default('manual'),
+  sortOrder: integer('sort_order').default(0),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  prdIdIdx: index('idx_prd_assets_prd_id').on(table.prdId),
+  assetIdIdx: index('idx_prd_assets_asset_id').on(table.assetId),
+  uniquePrdAsset: uniqueIndex('unique_prd_asset').on(table.prdId, table.assetId)
+}))

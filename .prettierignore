@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+.nuxt
+.output
+dist
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Environment
+.env
+.env.*
+
+# Build files
+build
+.cache
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
