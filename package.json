@@ -21,7 +21,11 @@
 		"storage:health": "tsx scripts/health-check-storage.ts",
 		"storage:test-obs": "tsx scripts/test-huawei-obs.ts",
 		"storage:init-obs": "tsx scripts/init-huawei-obs.ts",
-		"test:upload": "tsx scripts/test-upload.ts"
+		"test:upload": "tsx scripts/test-upload.ts",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"test:ui": "vitest --ui"
 	},
 	"dependencies": {
 		"@aivue/chatbot": "^2.5.5",
@@ -96,6 +100,7 @@
 	"devDependencies": {
 		"@eslint/js": "^9.39.2",
 		"@nuxt/devtools": "^1.7.0",
+		"@nuxt/test-utils": "^4.0.0",
 		"@nuxtjs/eslint-config-typescript": "^12.1.0",
 		"@tailwindcss/postcss": "^4.1.18",
 		"@tailwindcss/typography": "^0.5.19",
@@ -109,11 +114,15 @@
 		"@types/pg": "^8.16.0",
 		"@typescript-eslint/eslint-plugin": "^8.54.0",
 		"@typescript-eslint/parser": "^8.54.0",
+		"@vitest/coverage-v8": "^4.0.18",
+		"@vue/test-utils": "^2.4.6",
 		"drizzle-kit": "^0.20.18",
 		"eslint": "^9.39.2",
 		"eslint-plugin-vue": "^10.7.0",
 		"formdata-node": "^6.0.3",
+		"happy-dom": "^20.6.1",
 		"jsrepo": "^3.3.0",
+		"msw": "^2.12.10",
 		"prettier": "^3.8.1",
 		"prettier-plugin-tailwindcss": "^0.7.2",
 		"shadcn-vue": "^2.4.3",
@@ -121,6 +130,7 @@
 		"tailwindcss-animate": "^1.0.7",
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.3",
+		"vitest": "^4.0.18",
 		"vue-eslint-parser": "^10.2.0",
 		"vue-tsc": "^3.2.4"
 	}
