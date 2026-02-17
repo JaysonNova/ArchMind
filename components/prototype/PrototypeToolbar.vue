@@ -14,6 +14,60 @@
         {{ isGenerating ? $t('prototype.generating') : $t('prototype.generateFromPrd') }}
       </Button>
 
+      <!-- 设备类型选择（仅在有 PRD 时显示） -->
+      <div v-if="hasPrd && !hasPrototype" class="flex items-center gap-1.5">
+        <Select
+          :model-value="selectedDeviceType"
+          @update:model-value="$emit('update:deviceType', $event)"
+        >
+          <SelectTrigger class="h-7 w-auto text-xs gap-1 border-dashed">
+            <Monitor v-if="selectedDeviceType === 'desktop'" class="w-3 h-3" />
+            <Tablet v-else-if="selectedDeviceType === 'tablet'" class="w-3 h-3" />
+            <Smartphone v-else-if="selectedDeviceType === 'mobile'" class="w-3 h-3" />
+            <Layout v-else class="w-3 h-3" />
+            <SelectValue :placeholder="$t('prototype.selectDeviceType')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="responsive">
+              <div class="flex items-center gap-2">
+                <Layout class="w-3.5 h-3.5" />
+                <div>
+                  <div class="text-xs font-medium">{{ $t('prototype.deviceResponsive') }}</div>
+                  <div class="text-[10px] text-muted-foreground">{{ $t('prototype.deviceResponsiveDesc') }}</div>
+                </div>
+              </div>
+            </SelectItem>
+            <SelectItem value="desktop">
+              <div class="flex items-center gap-2">
+                <Monitor class="w-3.5 h-3.5" />
+                <div>
+                  <div class="text-xs font-medium">{{ $t('prototype.deviceDesktop') }}</div>
+                  <div class="text-[10px] text-muted-foreground">{{ $t('prototype.deviceDesktopDesc') }}</div>
+                </div>
+              </div>
+            </SelectItem>
+            <SelectItem value="tablet">
+              <div class="flex items-center gap-2">
+                <Tablet class="w-3.5 h-3.5" />
+                <div>
+                  <div class="text-xs font-medium">{{ $t('prototype.deviceTablet') }}</div>
+                  <div class="text-[10px] text-muted-foreground">{{ $t('prototype.deviceTabletDesc') }}</div>
+                </div>
+              </div>
+            </SelectItem>
+            <SelectItem value="mobile">
+              <div class="flex items-center gap-2">
+                <Smartphone class="w-3.5 h-3.5" />
+                <div>
+                  <div class="text-xs font-medium">{{ $t('prototype.deviceMobile') }}</div>
+                  <div class="text-[10px] text-muted-foreground">{{ $t('prototype.deviceMobileDesc') }}</div>
+                </div>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Separator v-if="hasPrd && hasPrototype" orientation="vertical" class="h-5" />
 
       <!-- 视图切换 -->
@@ -80,15 +134,24 @@
 </template>
 
 <script setup lang="ts">
-import { Eye, Code, Columns2, Wand2, Save, Maximize2 } from 'lucide-vue-next'
+import { Eye, Code, Columns2, Wand2, Save, Maximize2, Monitor, Tablet, Smartphone, Layout } from 'lucide-vue-next'
 import { Button } from '~/components/ui/button'
 import { Separator } from '~/components/ui/separator'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '~/components/ui/select'
+import type { DeviceType } from '~/types/prototype'
 
 defineProps<{
   hasPrototype: boolean
   hasPrd: boolean
   isGenerating: boolean
   activeView: 'preview' | 'code' | 'split'
+  selectedDeviceType: DeviceType
 }>()
 
 defineEmits<{
@@ -96,5 +159,6 @@ defineEmits<{
   toggleView: [view: 'preview' | 'code' | 'split']
   openFullscreen: []
   save: []
+  'update:deviceType': [deviceType: DeviceType]
 }>()
 </script>

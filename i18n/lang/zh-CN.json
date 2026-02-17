@@ -220,7 +220,8 @@
     "inProgress": "进行中",
     "copiedToClipboard": "已复制到剪贴板",
     "copyFailed": "复制失败",
-    "lastEdited": "最后编辑"
+    "lastEdited": "最后编辑",
+    "beta": "Beta"
   },
   "projects": {
     "title": "项目",
@@ -438,6 +439,15 @@
   },
   "chat": {
     "selectModel": "选择模型",
+    "selectTarget": "选择目标",
+    "target": {
+      "prd": "PRD 文档",
+      "prototype": "原型设计"
+    },
+    "targetDescription": {
+      "prd": "生成产品需求文档",
+      "prototype": "生成或编辑交互原型"
+    },
     "inputPlaceholder": "输入你的产品需求...",
     "sendShortcut": "按 {key} + {enter} 发送",
     "sendShortcutEnter": "按 Enter 发送,Shift + Enter 换行",
@@ -542,7 +552,6 @@
     "noModel": "没有可用的 AI 模型",
     "autoSaved": "已自动保存",
     "autoSavedDesc": "PRD 已保存到数据库,正在生成原型",
-    "saveFailed": "保存原型失败",
     "fullscreen": "全屏编辑",
     "exportHtml": "导出 HTML",
     "addPage": "添加页面",
@@ -556,9 +565,24 @@
     "viewCode": "代码",
     "viewSplit": "分屏",
     "copy": "复制",
-    "deviceDesktop": "桌面",
-    "deviceTablet": "平板",
-    "deviceMobile": "手机"
+    "deviceDesktop": "桌面端",
+    "deviceTablet": "平板端",
+    "deviceMobile": "移动端",
+    "deviceResponsive": "响应式",
+    "deviceDesktopDesc": "PC/笔记本浏览器，宽度 >= 1024px",
+    "deviceTabletDesc": "iPad/Android 平板，768px - 1024px",
+    "deviceMobileDesc": "iPhone/Android 手机，宽度 <= 428px",
+    "deviceResponsiveDesc": "自适应多种设备尺寸",
+    "selectDeviceType": "选择设备类型",
+    "editable": "可编辑",
+    "formatCode": "格式化代码",
+    "formatSuccess": "代码已格式化",
+    "formatFailed": "格式化失败",
+    "aiAssistant": "AI 助手",
+    "aiAssistantHint": "描述你想要的修改，AI 会帮你编辑原型",
+    "send": "发送",
+    "collapse": "收起",
+    "expand": "展开"
   },
   "logicMap": {
     "title": "逻辑图谱",

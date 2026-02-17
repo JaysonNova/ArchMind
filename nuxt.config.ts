@@ -33,6 +33,11 @@ export default defineNuxtConfig({
         code: 'zh-CN',
         name: '简体中文',
         file: 'zh-CN.json'
+      },
+      {
+        code: 'zh',
+        name: '简体中文',
+        file: 'zh-CN.json'
       }
     ],
     defaultLocale: 'zh-CN',
@@ -42,7 +47,7 @@ export default defineNuxtConfig({
       useCookie: true,
       cookieKey: 'i18n_locale',
       redirectOn: 'root',
-      alwaysRedirect: false
+      alwaysRedirect: true
     },
     compilation: {
       strictMessage: false,

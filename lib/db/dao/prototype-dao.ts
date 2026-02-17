@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { dbClient } from '../client'
-import type { Prototype, PrototypePage, PrototypeVersion } from '@/types/prototype'
+import type { Prototype, PrototypePage, PrototypeVersion, DeviceType } from '@/types/prototype'
 
 export class PrototypeDAO {
   static async create (data: Omit<Prototype, 'id' | 'createdAt' | 'updatedAt'>): Promise<Prototype> {
@@ -10,9 +10,9 @@ export class PrototypeDAO {
     const sql = `
       INSERT INTO prototypes (
         id, prd_id, user_id, title, description,
-        current_version, status, metadata, created_at, updated_at
+        current_version, status, device_type, metadata, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `
 
@@ -24,6 +24,7 @@ export class PrototypeDAO {
       data.description || null,
       data.currentVersion || 1,
       data.status || 'draft',
+      data.deviceType || 'responsive',
       JSON.stringify(data.metadata || {}),
       now,
       now
@@ -84,6 +85,7 @@ export class PrototypeDAO {
     if (data.description !== undefined) { fields.push(`description = $${paramIndex++}`); values.push(data.description) }
     if (data.status !== undefined) { fields.push(`status = $${paramIndex++}`); values.push(data.status) }
     if (data.currentVersion !== undefined) { fields.push(`current_version = $${paramIndex++}`); values.push(data.currentVersion) }
+    if (data.deviceType !== undefined) { fields.push(`device_type = $${paramIndex++}`); values.push(data.deviceType) }
     if (data.metadata !== undefined) { fields.push(`metadata = $${paramIndex++}`); values.push(JSON.stringify(data.metadata)) }
 
     if (fields.length === 0) return this.findById(id)
@@ -128,6 +130,7 @@ export class PrototypeDAO {
       description: row.description,
       currentVersion: row.current_version,
       status: row.status,
+      deviceType: (row.device_type as DeviceType) || 'responsive',
       metadata: typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata,
       createdAt: row.created_at,
       updatedAt: row.updated_at

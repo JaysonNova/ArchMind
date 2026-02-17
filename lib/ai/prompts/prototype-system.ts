@@ -458,10 +458,13 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica N
 /**
  * 从 PRD 构建原型生成 Prompt
  */
-export function buildPrototypeFromPRDPrompt (prdContent: string, pageCount?: number): string {
+export function buildPrototypeFromPRDPrompt (prdContent: string, pageCount?: number, deviceType?: string): string {
   const pageHint = pageCount
     ? `请生成 ${pageCount} 个页面的原型。`
     : '请根据 PRD 中描述的功能模块，合理划分页面数量（通常 2-5 个页面）。'
+
+  // 设备类型相关的生成指导
+  const deviceGuidance = getDeviceGuidance(deviceType)
 
   return `${PROTOTYPE_SYSTEM_PROMPT}
 
@@ -470,6 +473,10 @@ export function buildPrototypeFromPRDPrompt (prdContent: string, pageCount?: num
 根据以下 PRD 文档，生成对应的 HTML 原型页面。
 
 ${pageHint}
+
+## 目标设备类型
+
+${deviceGuidance}
 
 分析 PRD 中的：
 - 核心功能列表 → 确定需要哪些页面
@@ -481,6 +488,125 @@ ${pageHint}
 ${prdContent}
 
 请开始生成 HTML 原型。每个页面必须是完整的独立 HTML 文件。使用 <!-- PAGE:slug:name --> 标记分隔多个页面。`
+}
+
+/**
+ * 获取设备类型相关的生成指导
+ */
+function getDeviceGuidance (deviceType?: string): string {
+  switch (deviceType) {
+    case 'desktop':
+      return `**桌面端原型 (Desktop)**
+
+目标设备: PC/笔记本浏览器，屏幕宽度 >= 1024px
+
+设计要求:
+- 固定宽度布局，最大宽度 1440px，居中显示
+- 充分利用横向空间，使用多栏布局
+- 导航可使用水平导航栏 + 下拉菜单
+- 表格、表单可以横向展开
+- 鼠标交互：hover 状态、右键菜单、拖拽
+- 侧边栏、抽屉等空间利用
+- 字体大小：正文 16px，标题 24-32px
+
+布局示例:
+\`\`\`html
+<body class="bg-gray-50">
+  <div class="max-w-7xl mx-auto">
+    <!-- 桌面端内容 -->
+  </div>
+</body>
+\`\`\`
+`
+    case 'tablet':
+      return `**平板端原型 (Tablet)**
+
+目标设备: iPad/Android 平板，屏幕宽度 768px - 1024px
+
+设计要求:
+- 适配竖屏和横屏两种模式
+- 简化导航，使用汉堡菜单或底部导航
+- 触摸友好的按钮和交互区域 (最小 44px)
+- 表单输入优化，适合触摸输入
+- 减少侧边栏使用，优先全屏内容
+- 字体大小：正文 15-16px，标题 20-28px
+
+布局示例:
+\`\`\`html
+<body class="bg-gray-50">
+  <div class="max-w-3xl mx-auto px-4">
+    <!-- 平板端内容 -->
+  </div>
+</body>
+\`\`\`
+`
+    case 'mobile':
+      return `**移动端原型 (Mobile)**
+
+目标设备: iPhone/Android 手机，屏幕宽度 <= 428px
+
+设计要求:
+- 单栏布局，内容垂直排列
+- 底部导航栏（Tab Bar）或顶部汉堡菜单
+- 大按钮、大触摸区域（最小 44px）
+- 表单输入框高度 48px+
+- 简化内容，突出核心功能
+- 避免横向滚动
+- 字体大小：正文 14-16px，标题 18-24px
+- 底部留出安全区域（Home Indicator）
+
+布局示例:
+\`\`\`html
+<body class="bg-gray-50 pb-20">
+  <main class="px-4 pt-4">
+    <!-- 移动端内容 -->
+  </main>
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t">
+    <!-- 底部导航 -->
+  </nav>
+</body>
+\`\`\`
+`
+    case 'responsive':
+    default:
+      return `**响应式原型 (Responsive)**
+
+目标: 自适应桌面端、平板端、移动端
+
+设计要求:
+- Mobile-first 设计，从移动端开始
+- 使用 Tailwind 响应式断点: sm: (640px), md: (768px), lg: (1024px), xl: (1280px)
+- 导航：移动端汉堡菜单 → 平板端折叠菜单 → 桌面端水平导航
+- 布局：移动端单栏 → 平板端双栏 → 桌面端多栏
+- 字体大小使用响应式: text-base md:text-lg
+- 隐藏/显示元素使用: hidden md:block
+
+响应式布局示例:
+\`\`\`html
+<body class="bg-gray-50">
+  <div class="container mx-auto px-4">
+    <header class="py-4">
+      <nav class="flex items-center justify-between">
+        <div class="text-xl font-bold">Logo</div>
+        <!-- 移动端汉堡菜单 -->
+        <button class="md:hidden">☰</button>
+        <!-- 桌面端导航 -->
+        <ul class="hidden md:flex gap-6">
+          <li><a href="#">首页</a></li>
+          <li><a href="#">关于</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main class="py-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- 响应式卡片网格 -->
+      </div>
+    </main>
+  </div>
+</body>
+\`\`\`
+`
+  }
 }
 
 /**

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { nanoid } from 'nanoid'
-import type { Conversation, ConversationMessage } from '~/types/conversation'
+import type { Conversation, ConversationMessage, ConversationTargetType, ConversationTargetContext } from '~/types/conversation'
 
 const STORAGE_KEY = 'conversation:active'
 
@@ -9,12 +9,15 @@ export function useConversation () {
     id: nanoid(),
     messages: [],
     currentPrdContent: '',
+    target: 'prd',
     createdAt: Date.now(),
     updatedAt: Date.now()
   })
 
   const messages = computed(() => conversation.value.messages)
   const currentPrdContent = computed(() => conversation.value.currentPrdContent)
+  const currentTarget = computed(() => conversation.value.target)
+  const targetContext = computed(() => conversation.value.targetContext)
 
   // Load from localStorage
   function loadFromStorage () {
@@ -22,6 +25,10 @@ export function useConversation () {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       conversation.value = JSON.parse(stored)
+      // 确保兼容旧数据
+      if (!conversation.value.target) {
+        conversation.value.target = 'prd'
+      }
     }
   }
 
@@ -35,6 +42,7 @@ export function useConversation () {
           title: response.data.conversation?.title,
           messages: response.data.messages,
           currentPrdContent: response.data.prdContent || '',
+          target: 'prd',
           createdAt: Date.now(),
           updatedAt: Date.now(),
           savedToDb: true,
@@ -76,6 +84,7 @@ export function useConversation () {
 
   // Add AI message (streaming placeholder)
   function addAIMessage (options?: { modelUsed?: string; useRAG?: boolean }) {
+    const targetContentType = getTargetContentType(conversation.value.target)
     const message: ConversationMessage = {
       id: nanoid(),
       role: 'assistant',
@@ -84,7 +93,8 @@ export function useConversation () {
       useRAG: options?.useRAG,
       timestamp: Date.now(),
       isStreaming: true,
-      prdContent: ''
+      prdContent: '',
+      targetContentType
     }
     conversation.value.messages.push(message)
     return message
@@ -163,6 +173,9 @@ export function useConversation () {
     // 消息数量没有变化时不保存
     if (conv.lastSavedMessageCount === conv.messages.length) return
 
+    // 原型目标不自动保存到 PRD 数据库
+    if (conv.target === 'prototype') return
+
     if (conv.savedToDb && conv.dbId) {
       // 已有数据库记录，更新
       await updateConversation()
@@ -176,6 +189,33 @@ export function useConversation () {
     }
   }
 
+  // Switch conversation target
+  function switchTarget (newTarget: ConversationTargetType) {
+    conversation.value.target = newTarget
+    conversation.value.targetContext = undefined
+    conversation.value.updatedAt = Date.now()
+    saveToStorage()
+  }
+
+  // Update target context
+  function updateTargetContext (context: Partial<ConversationTargetContext>) {
+    conversation.value.targetContext = {
+      ...conversation.value.targetContext,
+      ...context
+    }
+    saveToStorage()
+  }
+
+  // Get content type based on target
+  function getTargetContentType (target: ConversationTargetType): 'markdown' | 'html' | 'json' {
+    switch (target) {
+      case 'prototype':
+        return 'html'
+      default:
+        return 'markdown'
+    }
+  }
+
   // Reset conversation
   function reset () {
     if (process.client) {
@@ -185,6 +225,7 @@ export function useConversation () {
       id: nanoid(),
       messages: [],
       currentPrdContent: '',
+      target: 'prd',
       createdAt: Date.now(),
       updatedAt: Date.now()
     }
@@ -195,6 +236,8 @@ export function useConversation () {
     conversation,
     messages,
     currentPrdContent,
+    currentTarget,
+    targetContext,
     loadFromStorage,
     loadFromDatabase,
     saveToStorage,
@@ -204,6 +247,8 @@ export function useConversation () {
     completeAIMessage,
     saveConversation,
     autoSaveToDatabase,
+    switchTarget,
+    updateTargetContext,
     reset
   }
 }

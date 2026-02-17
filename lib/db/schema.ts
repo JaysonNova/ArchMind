@@ -231,6 +231,7 @@ export const prototypes = pgTable('prototypes', {
   description: text('description'),
   currentVersion: integer('current_version').default(1),
   status: varchar('status', { length: 20 }).default('draft'),
+  deviceType: varchar('device_type', { length: 20 }).default('responsive'),
   metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()

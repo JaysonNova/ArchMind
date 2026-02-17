@@ -48,7 +48,8 @@ export default defineEventHandler(async (event) => {
       modelId,
       temperature: body.temperature,
       maxTokens: body.maxTokens || 16000,
-      pageCount: body.pageCount
+      pageCount: body.pageCount,
+      deviceType: body.deviceType
     })
 
     for await (const chunk of stream) {
@@ -65,7 +66,8 @@ export default defineEventHandler(async (event) => {
       title: prd.title ? `${prd.title} - 原型` : '原型图',
       description: `从 PRD 自动生成`,
       currentVersion: 1,
-      status: 'draft'
+      status: 'draft',
+      deviceType: body.deviceType || 'responsive'
     })
 
     const savedPages = await PrototypePageDAO.batchCreate(

@@ -257,6 +257,7 @@ import {
 } from '~/components/ui/dialog'
 import { Checkbox } from '~/components/ui/checkbox'
 import { useToast } from '~/components/ui/toast/use-toast'
+import type { ConversationTargetType } from '~/types/conversation'
 
 const { t } = useI18n()
 const { toast } = useToast()
@@ -350,8 +351,13 @@ const conversationRef = conversation.conversation
 
 async function handleSendMessage (
   message: string,
-  options: { modelId: string; useRAG: boolean }
+  options: { modelId: string; useRAG: boolean; target: ConversationTargetType }
 ) {
+  // 切换对话目标（如果改变了）
+  if (options.target !== conversation.currentTarget.value) {
+    conversation.switchTarget(options.target)
+  }
+
   // Add user message
   conversation.addUserMessage(message, {
     modelUsed: options.modelId,
@@ -386,7 +392,12 @@ async function handleSendMessage (
           timestamp: m.timestamp
         })),
         modelId: options.modelId,
-        useRAG: options.useRAG
+        useRAG: options.useRAG,
+        target: options.target,
+        // 原型目标时传递当前 HTML 上下文
+        targetContext: options.target === 'prototype' ? {
+          prototypeHtml: conversation.targetContext.value?.prototypeHtml
+        } : undefined
       })
     })
 

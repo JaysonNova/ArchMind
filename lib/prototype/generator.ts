@@ -19,6 +19,7 @@ export interface PrototypeGenerateOptions {
   maxTokens?: number
   useRAG?: boolean
   pageCount?: number
+  deviceType?: string
 }
 
 export interface ParsedPrototypePage {
@@ -51,7 +52,7 @@ export class PrototypeGenerator {
     const adapter = this.modelManager.getAdapter(modelId)
     if (!adapter) throw new Error(`Model ${modelId} not available`)
 
-    const prompt = buildPrototypeFromPRDPrompt(prdContent, options?.pageCount)
+    const prompt = buildPrototypeFromPRDPrompt(prdContent, options?.pageCount, options?.deviceType)
 
     const stream = adapter.generateStream(prompt, {
       temperature: options?.temperature || 0.3,

@@ -6,8 +6,9 @@
 import { ModelManager } from '~/lib/ai/manager'
 import { RAGRetriever } from '~/lib/rag/retriever'
 import { buildConversationalPrompt } from '~/lib/ai/prompts/conversation-system'
+import { buildPrototypeConversationalPrompt } from '~/lib/ai/prompts/prototype-system'
 import type { ChatMessage } from '~/lib/ai/types'
-import type { ConversationMessage } from '~/types/conversation'
+import type { ConversationMessage, ConversationTargetType, ConversationTargetContext } from '~/types/conversation'
 import type { IEmbeddingAdapter } from '~/lib/rag/embedding-adapter'
 
 export interface ChatStreamOptions {
@@ -18,17 +19,56 @@ export interface ChatStreamOptions {
   topK?: number
 }
 
+export interface ChatEngineOptions {
+  target?: ConversationTargetType
+  targetContext?: ConversationTargetContext
+}
+
 const MAX_HISTORY_MESSAGES = 20
 
 export class ChatEngine {
   private modelManager: ModelManager
   private ragRetriever: RAGRetriever | null = null
+  private target: ConversationTargetType
+  private targetContext?: ConversationTargetContext
 
-  constructor (embeddingAdapter?: IEmbeddingAdapter, aiConfig?: Record<string, any>) {
+  constructor (embeddingAdapter?: IEmbeddingAdapter, aiConfig?: Record<string, any>, options?: ChatEngineOptions) {
     this.modelManager = new ModelManager(aiConfig)
     if (embeddingAdapter) {
       this.ragRetriever = new RAGRetriever(embeddingAdapter)
     }
+    this.target = options?.target || 'prd'
+    this.targetContext = options?.targetContext
+  }
+
+  /**
+   * 根据目标类型获取系统提示词
+   */
+  private getSystemPrompt (backgroundContext?: string): string {
+    switch (this.target) {
+      case 'prototype':
+        return buildPrototypeConversationalPrompt(backgroundContext)
+      case 'prd':
+      default:
+        return buildConversationalPrompt(backgroundContext)
+    }
+  }
+
+  /**
+   * 构建包含目标上下文的用户消息
+   */
+  private buildContextualMessage (currentMessage: string): string {
+    if (this.target === 'prototype' && this.targetContext?.prototypeHtml) {
+      return `${currentMessage}
+
+## 当前原型内容
+
+\`\`\`html
+${this.targetContext.prototypeHtml}
+\`\`\`
+`
+    }
+    return currentMessage
   }
 
   /**
@@ -53,7 +93,7 @@ export class ChatEngine {
       })
     }
 
-    // 添加当前用户消息
+    // 添加当前用户消息（可能包含目标上下文）
     messages.push({ role: 'user', content: currentMessage })
 
     return messages
@@ -87,11 +127,14 @@ export class ChatEngine {
       }
     }
 
-    // 构建系统提示词（含 RAG 上下文）
-    const systemPrompt = buildConversationalPrompt(backgroundContext)
+    // 根据目标类型获取系统提示词
+    const systemPrompt = this.getSystemPrompt(backgroundContext)
+
+    // 构建包含目标上下文的用户消息
+    const contextualMessage = this.buildContextualMessage(currentMessage)
 
     // 构建完整的 messages 数组
-    const messages = this.buildMessages(history, currentMessage, systemPrompt)
+    const messages = this.buildMessages(history, contextualMessage, systemPrompt)
 
     // 调用模型流式生成
     const streamIterator = modelAdapter.generateStream('', {

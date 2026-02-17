@@ -32,8 +32,8 @@
       <iframe
         v-else
         ref="iframeRef"
-        :srcdoc="html"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        :srcdoc="disableInteractionHtml"
+        sandbox="allow-same-origin allow-scripts"
         :style="iframeStyle"
         class="border border-border rounded-lg shadow-sm bg-white transition-all duration-300"
       />
@@ -68,6 +68,35 @@ const iframeStyle = computed(() => {
     height: device?.height || '100%',
     maxWidth: '100%',
     maxHeight: '100%'
+  }
+})
+
+// 注入 CSS 禁用原型内的交互，防止点击产生错误效果
+const disableInteractionHtml = computed(() => {
+  if (!props.html) return ''
+
+  const disableStyles = `
+    <style>
+      /* 禁用所有交互，原型仅用于视觉预览 */
+      *, *::before, *::after {
+        pointer-events: none !important;
+        cursor: default !important;
+        user-select: none !important;
+      }
+      /* 保持滚动功能 */
+      html, body {
+        overflow: auto !important;
+      }
+    </style>
+  `
+
+  // 在 </head> 或 <html> 后注入样式
+  if (props.html.includes('</head>')) {
+    return props.html.replace('</head>', `${disableStyles}</head>`)
+  } else if (props.html.includes('<html')) {
+    return props.html.replace(/<html[^>]*>/, `$&${disableStyles}`)
+  } else {
+    return disableStyles + props.html
   }
 })
 </script>

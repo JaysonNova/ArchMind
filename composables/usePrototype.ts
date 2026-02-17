@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import type { Prototype, PrototypePage } from '~/types/prototype'
+import type { Prototype, PrototypePage, DeviceType } from '~/types/prototype'
 
 const STORAGE_KEY = 'prototype:active'
 
@@ -158,7 +158,7 @@ export function usePrototype () {
   // 从 PRD 生成原型（流式）
   async function generateFromPRD (
     prdId: string,
-    options: { modelId: string; pageCount?: number }
+    options: { modelId: string; pageCount?: number; deviceType?: DeviceType }
   ) {
     isGenerating.value = true
     generationProgress.value = ''
@@ -172,7 +172,8 @@ export function usePrototype () {
         body: JSON.stringify({
           prdId,
           modelId: options.modelId,
-          pageCount: options.pageCount
+          pageCount: options.pageCount,
+          deviceType: options.deviceType
         })
       })
 

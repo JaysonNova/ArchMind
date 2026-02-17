@@ -1,4 +1,3 @@
-import { MinioAdapter } from './adapters/minio-adapter'
 import { HuaweiOBSAdapter } from './adapters/huawei-obs-adapter'
 import type { StorageAdapter } from './storage-adapter'
 
@@ -10,6 +9,9 @@ import type { StorageAdapter } from './storage-adapter'
  * const storage = getStorageClient()
  * await storage.uploadFile(key, buffer)
  * ```
+ *
+ * 支持的存储提供商:
+ * - huawei-obs: 华为云 OBS (默认)
  */
 
 let storageClientInstance: StorageAdapter | null = null
@@ -20,15 +22,11 @@ export function getStorageClient(): StorageAdapter {
     return storageClientInstance
   }
 
-  const provider = process.env.STORAGE_PROVIDER || 'minio'
+  const provider = process.env.STORAGE_PROVIDER || 'huawei-obs'
 
   console.log(`[Storage] 初始化存储客户端: ${provider}`)
 
   switch (provider) {
-    case 'minio':
-      storageClientInstance = new MinioAdapter()
-      break
-
     case 'huawei-obs':
       storageClientInstance = new HuaweiOBSAdapter()
       break
@@ -43,7 +41,7 @@ export function getStorageClient(): StorageAdapter {
     //   break
 
     default:
-      throw new Error(`不支持的存储提供商: ${provider}. 可选值: minio, huawei-obs`)
+      throw new Error(`不支持的存储提供商: ${provider}. 可选值: huawei-obs`)
   }
 
   return storageClientInstance

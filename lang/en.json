@@ -219,7 +219,8 @@
     "inProgress": "In Progress",
     "copiedToClipboard": "Copied to clipboard",
     "copyFailed": "Copy failed",
-    "lastEdited": "Last edited"
+    "lastEdited": "Last edited",
+    "beta": "Beta"
   },
   "projects": {
     "title": "Projects",
@@ -432,6 +433,15 @@
   },
   "chat": {
     "selectModel": "Select Model",
+    "selectTarget": "Select Target",
+    "target": {
+      "prd": "PRD Document",
+      "prototype": "Prototype"
+    },
+    "targetDescription": {
+      "prd": "Generate Product Requirements Document",
+      "prototype": "Generate or edit interactive prototype"
+    },
     "inputPlaceholder": "Enter your product requirements...",
     "sendShortcut": "Press {key} + {enter} to send",
     "sendShortcutEnter": "Press Enter to send, Shift + Enter for new line",
@@ -546,7 +556,23 @@
     "copy": "Copy",
     "deviceDesktop": "Desktop",
     "deviceTablet": "Tablet",
-    "deviceMobile": "Mobile"
+    "deviceMobile": "Mobile",
+    "deviceResponsive": "Responsive",
+    "deviceDesktopDesc": "PC/Laptop browsers, width >= 1024px",
+    "deviceTabletDesc": "iPad/Android tablets, 768px - 1024px",
+    "deviceMobileDesc": "iPhone/Android phones, width <= 428px",
+    "deviceResponsiveDesc": "Adaptive to multiple device sizes",
+    "selectDeviceType": "Select device type",
+    "saveSuccess": "Saved successfully",
+    "editable": "Editable",
+    "formatCode": "Format code",
+    "formatSuccess": "Code formatted",
+    "formatFailed": "Format failed",
+    "aiAssistant": "AI Assistant",
+    "aiAssistantHint": "Describe your changes, AI will help edit the prototype",
+    "send": "Send",
+    "collapse": "Collapse",
+    "expand": "Expand"
   },
   "logicMap": {
     "title": "Logic Map",

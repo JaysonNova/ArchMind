@@ -31,9 +31,15 @@
       <div ref="bottomBarRef" class="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-center justify-between bg-transparent rounded-b-lg">
         <!-- Left Controls -->
         <div ref="leftControlsRef" class="flex items-center gap-2 shrink-0">
+          <!-- Target Selector -->
+          <TargetSelector
+            v-model="selectedTarget"
+            :is-loading="isLoading"
+          />
+
           <!-- Model Selector -->
           <Select v-model="selectedModel" :disabled="isLoading">
-            <SelectTrigger class="h-8 w-[160px] text-xs border-0 shadow-none hover:bg-background/80">
+            <SelectTrigger class="h-8 w-[160px] text-xs border-0 shadow-none hover:bg-background/80 bg-transparent">
               <SelectValue :placeholder="$t('chat.selectModel')" />
             </SelectTrigger>
             <SelectContent>
@@ -90,11 +96,13 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { BookOpen, Send, Loader2 } from 'lucide-vue-next'
+import TargetSelector from './TargetSelector.vue'
+import type { ConversationTargetType } from '~/types/conversation'
 
 const { locale } = useI18n()
 
 const emit = defineEmits<{
-  send: [message: string, options: { modelId: string; useRAG: boolean }]
+  send: [message: string, options: { modelId: string; useRAG: boolean; target: ConversationTargetType }]
 }>()
 
 const props = defineProps<{
@@ -104,12 +112,14 @@ const props = defineProps<{
 
 const RAG_STORAGE_KEY = 'archmind-use-rag'
 const HEIGHT_STORAGE_KEY = 'archmind-input-height'
+const TARGET_STORAGE_KEY = 'archmind-conversation-target'
 const MIN_HEIGHT = 120
 const MAX_HEIGHT = 400
 const DEFAULT_HEIGHT = 160
 
 const input = ref('')
 const selectedModel = ref(props.availableModels[0]?.id || '')
+const selectedTarget = ref<ConversationTargetType>('prd')
 const useRAG = ref(false)
 const isComposing = ref(false)
 const containerRef = ref<HTMLDivElement>()
@@ -152,6 +162,11 @@ onMounted(() => {
     }
   }
 
+  const savedTarget = localStorage.getItem(TARGET_STORAGE_KEY) as ConversationTargetType | null
+  if (savedTarget && (savedTarget === 'prd' || savedTarget === 'prototype')) {
+    selectedTarget.value = savedTarget
+  }
+
   // 先测量 hint 的自然宽度（此时 hint 为 invisible absolute，不影响布局但可测量）
   if (hintRef.value) {
     hintNaturalWidth = hintRef.value.offsetWidth
@@ -180,6 +195,11 @@ watch(locale, async () => {
 // 监听 RAG 开关变化,持久化到 localStorage
 watch(useRAG, (newValue) => {
   localStorage.setItem(RAG_STORAGE_KEY, String(newValue))
+})
+
+// 监听目标切换,持久化到 localStorage
+watch(selectedTarget, (newValue) => {
+  localStorage.setItem(TARGET_STORAGE_KEY, newValue)
 })
 
 // 监听高度变化,持久化到 localStorage
@@ -253,7 +273,8 @@ function handleSubmit () {
   if (!input.value.trim() || props.isLoading) return
   emit('send', input.value, {
     modelId: selectedModel.value,
-    useRAG: useRAG.value
+    useRAG: useRAG.value,
+    target: selectedTarget.value
   })
   input.value = ''
 }

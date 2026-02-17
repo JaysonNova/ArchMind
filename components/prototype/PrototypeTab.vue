@@ -6,10 +6,12 @@
       :has-prd="!!prdContent"
       :is-generating="prototypeState.isGenerating.value"
       :active-view="activeView"
+      :selected-device-type="selectedDeviceType"
       @generate-from-prd="handleGenerateFromPRD"
       @toggle-view="activeView = $event"
       @open-fullscreen="navigateToFullscreen"
       @save="handleSave"
+      @update:device-type="selectedDeviceType = $event"
     />
 
     <!-- 生成进度指示器 -->
@@ -189,6 +191,7 @@ import PrototypeCodeEditor from './PrototypeCodeEditor.vue'
 import PrototypePageNavigator from './PrototypePageNavigator.vue'
 import PrototypeToolbar from './PrototypeToolbar.vue'
 import { usePrototype } from '~/composables/usePrototype'
+import type { DeviceType } from '~/types/prototype'
 
 const props = defineProps<{
   prdContent: string
@@ -210,6 +213,7 @@ const activeView = ref<'preview' | 'code' | 'split'>('preview')
 const showAddPageDialog = ref(false)
 const newPageName = ref('')
 const newPageSlug = ref('')
+const selectedDeviceType = ref<DeviceType>('responsive')
 
 const effectivePages = computed(() => prototypeState.effectivePages.value)
 
@@ -345,7 +349,7 @@ async function handleGenerateFromPRD () {
       })
     }
 
-    await prototypeState.generateFromPRD(prdId!, { modelId })
+    await prototypeState.generateFromPRD(prdId!, { modelId, deviceType: selectedDeviceType.value })
     toast({ title: t('prototype.generateSuccess'), variant: 'success' })
   } catch (error) {
     toast({

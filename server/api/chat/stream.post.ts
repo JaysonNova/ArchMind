@@ -4,7 +4,7 @@ import YAML from 'js-yaml'
 import { ChatEngine } from '~/lib/chat/engine'
 import { getModelManager } from '~/lib/ai/manager'
 import { EmbeddingServiceFactory } from '~/lib/rag/embedding-adapter'
-import type { ConversationMessage } from '~/types/conversation'
+import type { ConversationMessage, ConversationTargetType, ConversationTargetContext } from '~/types/conversation'
 
 interface ChatStreamRequest {
   message: string
@@ -13,6 +13,8 @@ interface ChatStreamRequest {
   useRAG?: boolean
   temperature?: number
   maxTokens?: number
+  target?: ConversationTargetType
+  targetContext?: ConversationTargetContext
 }
 
 export default defineEventHandler(async (event) => {
@@ -77,7 +79,10 @@ export default defineEventHandler(async (event) => {
     }
 
     // 创建对话引擎
-    const engine = new ChatEngine(embeddingAdapter || undefined, config)
+    const engine = new ChatEngine(embeddingAdapter || undefined, config, {
+      target: body.target || 'prd',
+      targetContext: body.targetContext
+    })
 
     // 流式生成
     const stream = engine.chatStream(body.message, body.history || [], {

@@ -107,34 +107,66 @@
       </div>
     </div>
 
-    <!-- 底部对话输入（可折叠） -->
-    <div class="border-t">
+    <!-- 底部对话输入（AI 助手面板） -->
+    <div
+      class="border-t transition-all duration-300"
+      :class="chatExpanded ? 'bg-gradient-to-r from-primary/5 to-primary/10' : 'bg-muted/30'"
+    >
+      <!-- 展开/收起按钮 -->
       <button
-        class="w-full px-4 py-2 text-xs text-muted-foreground hover:bg-muted/50 flex items-center gap-2 transition-colors"
+        class="w-full px-4 py-2.5 text-sm flex items-center gap-2 transition-colors hover:bg-muted/50"
         @click="chatExpanded = !chatExpanded"
       >
-        <MessageSquare class="w-3.5 h-3.5" />
-        <span>{{ chatExpanded ? '收起 AI 助手' : '展开 AI 助手 — 描述修改需求' }}</span>
-        <ChevronUp v-if="chatExpanded" class="w-3.5 h-3.5 ml-auto" />
-        <ChevronDown v-else class="w-3.5 h-3.5 ml-auto" />
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-primary/10">
+            <Sparkles class="w-4 h-4 text-primary" />
+          </div>
+          <span class="font-medium text-foreground">{{ $t('prototype.aiAssistant') }}</span>
+          <Badge variant="secondary" class="text-[10px]">
+            {{ $t('common.beta') }}
+          </Badge>
+        </div>
+        <span class="text-xs text-muted-foreground ml-2">
+          {{ $t('prototype.aiAssistantHint') }}
+        </span>
+        <ChevronUp
+          v-if="chatExpanded"
+          class="w-4 h-4 text-muted-foreground ml-auto transition-transform"
+        />
+        <ChevronDown
+          v-else
+          class="w-4 h-4 text-muted-foreground ml-auto transition-transform"
+        />
       </button>
-      <div v-if="chatExpanded" class="px-4 pb-3">
-        <div class="flex gap-2">
-          <Textarea
-            v-model="chatInput"
-            :placeholder="$t('prototype.chatHint')"
-            class="flex-1 min-h-[60px] max-h-[120px] text-sm"
-            @keydown.ctrl.enter="handleChatSend"
-            @keydown.meta.enter="handleChatSend"
-          />
-          <Button
-            class="self-end"
-            size="sm"
-            :disabled="!chatInput.trim() || prototypeState.isGenerating.value"
-            @click="handleChatSend"
-          >
-            <Send class="w-4 h-4" />
-          </Button>
+
+      <!-- 对话输入区域 -->
+      <div v-if="chatExpanded" class="px-4 pb-4">
+        <div class="bg-background rounded-xl border shadow-sm p-3">
+          <div class="flex gap-3">
+            <div class="flex-1">
+              <Textarea
+                v-model="chatInput"
+                :placeholder="$t('prototype.aiAssistantHint')"
+                class="min-h-[80px] max-h-[160px] text-sm border-0 shadow-none focus-visible:ring-0 resize-none p-0"
+                @keydown.ctrl.enter="handleChatSend"
+                @keydown.meta.enter="handleChatSend"
+              />
+              <div class="flex items-center justify-between mt-2 pt-2 border-t">
+                <span class="text-[10px] text-muted-foreground">
+                  Ctrl + Enter {{ $t('prototype.send') }}
+                </span>
+                <Button
+                  size="sm"
+                  class="gap-1.5 h-7"
+                  :disabled="!chatInput.trim() || prototypeState.isGenerating.value"
+                  @click="handleChatSend"
+                >
+                  <Send class="w-3.5 h-3.5" />
+                  {{ $t('prototype.send') }}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -168,7 +200,7 @@
 import { ref, onMounted } from 'vue'
 import {
   ArrowLeft, Eye, Code, Columns2, Save, Download,
-  MessageSquare, ChevronUp, ChevronDown, Send
+  Sparkles, ChevronUp, ChevronDown, Send
 } from 'lucide-vue-next'
 import { Button } from '~/components/ui/button'
 import { Badge } from '~/components/ui/badge'
