@@ -670,13 +670,28 @@
     "setDefaultError": "设置默认工作区失败",
     "deleteSuccess": "工作区删除成功",
     "deleteSuccessDescription": "工作区已被删除",
-    "deleteError": "删除工作区失败"
+    "deleteError": "删除工作区失败",
+    "edit": "编辑",
+    "editTitle": "编辑工作区",
+    "editDescription": "修改工作区的名称、描述、图标和颜色",
+    "editSuccess": "工作区更新成功",
+    "editSuccessDescription": "工作区信息已更新",
+    "editError": "更新工作区失败",
+    "details": "查看详情",
+    "detailsTitle": "工作区详情",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间",
+    "isDefault": "默认工作区",
+    "yes": "是",
+    "no": "否",
+    "documentCount": "文档数量",
+    "prdCount": "PRD 数量"
   },
   "defaults": {
     "untitledProject": "未命名项目",
     "untitledPrd": "未命名 PRD",
     "untitled": "未命名",
-    "localWorkspace": "本地工作区",
+    "localWorkspace": "默认工作区",
     "archMind": "ArchMind"
   },
   "errors": {

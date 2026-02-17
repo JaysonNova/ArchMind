@@ -1,8 +1,9 @@
 <template>
-  <div class="generate-page flex flex-col" style="height: calc(100vh - 86px);">
-    <div class="max-w-[1800px] mx-auto px-6 pt-2 pb-4 flex-1 flex flex-col min-h-0 w-full">
+  <NuxtLayout :name="layoutName">
+  <div class="generate-page flex flex-col" :style="{ height: isImmersive ? '100vh' : 'calc(100vh - 86px)' }">
+    <div class="max-w-[1800px] mx-auto px-6 pb-4 flex-1 flex flex-col min-h-0 w-full" :class="isImmersive ? 'pt-4' : 'pt-2'">
       <!-- Header with Status Badges -->
-      <div class="flex items-center justify-between flex-shrink-0 mb-2">
+      <div class="flex items-center justify-between flex-shrink-0 mb-2" :class="{ 'pl-14': isImmersive }">
         <div class="flex items-center gap-3">
           <Badge variant="secondary" class="gap-2">
             <Sparkles class="w-3 h-3" />
@@ -34,6 +35,18 @@
             <Download class="w-4 h-4" />
             {{ $t('generate.exportDeliverable') }}
           </Button>
+          <template v-if="isImmersive">
+            <div class="w-px h-5 bg-border mx-1" />
+            <LanguageSwitcher />
+            <Button
+              variant="ghost"
+              size="sm"
+              @click="toggleDark"
+            >
+              <Moon v-if="isDark" class="w-4 h-4" />
+              <Sun v-else class="w-4 h-4" />
+            </Button>
+          </template>
         </div>
       </div>
 
@@ -44,7 +57,11 @@
           class="flex flex-col overflow-hidden transition-all duration-300"
           :class="previewVisible ? 'lg:w-[40%]' : 'lg:w-full'"
         >
-          <MessageList :messages="conversationRef.messages" />
+          <MessageList
+            :messages="conversationRef.messages"
+            @retry="handleRetry"
+            @back="handleBack"
+          />
           <MessageInput
             :is-loading="isGenerating"
             :available-models="availableModels"
@@ -217,6 +234,7 @@
       </DialogContent>
     </Dialog>
   </div>
+  </NuxtLayout>
 </template>
 
 <style>
@@ -228,7 +246,7 @@ body:has(.generate-page) {
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { RotateCcw, Download, Sparkles, Cpu, PanelRightClose, PanelRightOpen, FileText, Layout, Loader2 } from 'lucide-vue-next'
+import { RotateCcw, Download, Sparkles, Cpu, PanelRightClose, PanelRightOpen, FileText, Layout, Loader2, Moon, Sun } from 'lucide-vue-next'
 import { useConversation } from '~/composables/useConversation'
 import { useAiModels } from '~/composables/useAiModels'
 import { usePrototype } from '~/composables/usePrototype'
@@ -257,14 +275,24 @@ import {
 } from '~/components/ui/dialog'
 import { Checkbox } from '~/components/ui/checkbox'
 import { useToast } from '~/components/ui/toast/use-toast'
-import type { ConversationTargetType } from '~/types/conversation'
+import LanguageSwitcher from '~/components/common/LanguageSwitcher.vue'
+import type { ConversationTargetType, ConversationMessage } from '~/types/conversation'
 
 const { t } = useI18n()
 const { toast } = useToast()
 const route = useRoute()
 
+const isImmersive = computed(() => route.query.immersive === '1')
+const layoutName = computed(() => isImmersive.value ? 'chat' : 'dashboard')
+
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+function toggleDark() {
+  colorMode.preference = isDark.value ? 'light' : 'dark'
+}
+
 definePageMeta({
-  layout: 'dashboard',
+  layout: false,
   middleware: ['auth']
 })
 
@@ -600,5 +628,29 @@ function downloadBlob (blob: Blob, filename: string) {
   a.download = filename
   a.click()
   URL.revokeObjectURL(url)
+}
+
+// Handle retry - resend a user message
+async function handleRetry (message: ConversationMessage) {
+  if (message.role !== 'user') return
+
+  // Delete all messages from this one onwards
+  conversation.deleteMessagesFrom(message.id)
+
+  // Get the model ID from the original message or use the last used one
+  const modelId = message.modelUsed || lastUsedModelId.value || availableModels.value[0]?.id
+  if (!modelId) return
+
+  // Resend the message
+  await handleSendMessage(message.content, {
+    modelId,
+    useRAG: message.useRAG ?? true,
+    target: conversation.currentTarget.value
+  })
+}
+
+// Handle back - delete messages from this point onwards
+function handleBack (message: ConversationMessage) {
+  conversation.deleteMessagesFrom(message.id)
 }
 </script>

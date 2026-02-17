@@ -65,15 +65,10 @@
       class="flex-1 overflow-hidden flex items-center justify-center bg-muted/10"
     >
       <div class="flex flex-col items-center gap-6 max-w-md text-center">
-        <div class="relative w-20 h-20">
-          <div class="absolute inset-0 rounded-full border-4 border-muted animate-ping opacity-20" />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <component
-              :is="stageIcon"
-              class="w-10 h-10 text-primary animate-pulse"
-            />
-          </div>
-        </div>
+        <component
+          :is="stageIcon"
+          class="w-10 h-10 text-primary animate-spin"
+        />
 
         <div class="space-y-2">
           <p class="text-lg font-medium text-foreground">
@@ -496,8 +491,17 @@ async function handleGenerate () {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   logicMapState.loadFromStorage()
+
+  // 如果有 prdId，尝试从数据库加载逻辑图谱
+  if (props.prdId) {
+    // 先检查 localStorage 是否有数据，没有则从服务端加载
+    if (!logicMapState.logicMapData.value?.nodes?.length) {
+      await logicMapState.loadByPrdId(props.prdId)
+    }
+  }
+
   document.addEventListener('keydown', handleKeydown)
 })
 

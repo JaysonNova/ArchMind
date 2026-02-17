@@ -597,7 +597,7 @@ async function confirmDelete () {
 function handleContinueConversation () {
   router.push({
     path: '/generate',
-    query: { loadPrd: prdId }
+    query: { loadPrd: prdId, immersive: '1' }
   })
 }
 
@@ -611,7 +611,7 @@ function handleViewPrototype () {
 function handleEditPrd () {
   router.push({
     path: '/generate',
-    query: { loadPrd: prdId }
+    query: { loadPrd: prdId, immersive: '1' }
   })
 }
 </script>

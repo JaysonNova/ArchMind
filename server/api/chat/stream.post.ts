@@ -98,16 +98,69 @@ export default defineEventHandler(async (event) => {
       event.node.res.write(`data: ${JSON.stringify({ chunk, done: false })}\n\n`)
     }
 
-    // 判断是否包含 PRD 内容(包含多个标准章节标题)
-    const isPRD = (fullContent.includes('## 1.') || fullContent.includes('### 1.')) &&
-                  (fullContent.includes('产品概述') || fullContent.includes('核心功能') || fullContent.includes('用户需求'))
+    // 判断是否包含 PRD 内容
+    // 检测标准：包含结构化章节标题 + PRD 关键词
+    const hasStructuredSections = fullContent.includes('## 1.') ||
+                                   fullContent.includes('### 1.') ||
+                                   fullContent.includes('## 2.') ||
+                                   fullContent.includes('### 2.')
+    const hasPrdKeywords = fullContent.includes('产品概述') ||
+                           fullContent.includes('核心功能') ||
+                           fullContent.includes('用户需求') ||
+                           fullContent.includes('功能需求') ||
+                           fullContent.includes('业务背景') ||
+                           fullContent.includes('技术架构') ||
+                           fullContent.includes('Product Overview') ||
+                           fullContent.includes('Core Features') ||
+                           fullContent.includes('User Requirements')
+    const isPRD = hasStructuredSections && hasPrdKeywords
 
-    // 发送完成信号,如果是PRD则同时发送完整内容
+    // 提取纯 PRD 内容（去除前面的对话/思考部分）
+    let prdContent = ''
+    if (isPRD) {
+      // 尝试匹配 PRD 标题行作为起始点
+      // 匹配格式如：# PRD、# 产品需求文档、## 1. 产品概述 等
+      const prdStartPatterns = [
+        /^#\s*(PRD|产品需求文档|Product\s*Requirements?\s*Document)/m,
+        /^##\s*1\.\s*产品概述/m,
+        /^##\s*1\.\s*Product\s*Overview/mi,
+        /^###\s*1\.\s*产品概述/m,
+        /^###\s*1\.\s*Product\s*Overview/mi,
+        /^##\s*一、产品概述/m,
+        /^##\s*1\s+产品概述/m
+      ]
+
+      let prdStartIndex = -1
+      for (const pattern of prdStartPatterns) {
+        const match = fullContent.match(pattern)
+        if (match && match.index !== undefined) {
+          prdStartIndex = match.index
+          break
+        }
+      }
+
+      // 如果找到 PRD 起始位置，提取从那里开始的内容
+      if (prdStartIndex >= 0) {
+        prdContent = fullContent.substring(prdStartIndex).trim()
+      } else {
+        // 如果没有明确的起始标记，检查是否以常见 PRD 标题格式开头
+        // 尝试找到第一个 ## 或 ### 标题作为起始点
+        const headerMatch = fullContent.match(/^(#{1,3}\s+.+)$/m)
+        if (headerMatch && headerMatch.index !== undefined) {
+          prdContent = fullContent.substring(headerMatch.index).trim()
+        } else {
+          // 兜底：使用全部内容
+          prdContent = fullContent
+        }
+      }
+    }
+
+    // 发送完成信号,如果是PRD则同时发送提取后的PRD内容
     event.node.res.write(`data: ${JSON.stringify({
       chunk: '',
       done: true,
       isPRD,
-      fullContent: isPRD ? fullContent : undefined
+      fullContent: isPRD ? prdContent : undefined
     })}\n\n`)
     event.node.res.end()
   } catch (error) {

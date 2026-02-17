@@ -671,13 +671,28 @@
     "setDefaultError": "Failed to set default workspace",
     "deleteSuccess": "Workspace deleted successfully",
     "deleteSuccessDescription": "Workspace has been deleted",
-    "deleteError": "Failed to delete workspace"
+    "deleteError": "Failed to delete workspace",
+    "edit": "Edit",
+    "editTitle": "Edit Workspace",
+    "editDescription": "Modify workspace name, description, icon and color",
+    "editSuccess": "Workspace updated successfully",
+    "editSuccessDescription": "Workspace info has been updated",
+    "editError": "Failed to update workspace",
+    "details": "Details",
+    "detailsTitle": "Workspace Details",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "isDefault": "Default Workspace",
+    "yes": "Yes",
+    "no": "No",
+    "documentCount": "Documents",
+    "prdCount": "PRDs"
   },
   "defaults": {
     "untitledProject": "Untitled Project",
     "untitledPrd": "Untitled PRD",
     "untitled": "Untitled",
-    "localWorkspace": "Local",
+    "localWorkspace": "Default Workspace",
     "archMind": "ArchMind"
   },
   "errors": {

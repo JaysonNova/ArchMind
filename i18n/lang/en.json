@@ -327,6 +327,13 @@
     "hidePreview": "Hide Preview",
     "emptyPreview": "Start a conversation to see the generated PRD document here",
     "editorPlaceholder": "Type to edit PRD document directly, or generate content via chat on the left...",
+    "richTextMode": "Rich Text",
+    "markdownMode": "Markdown",
+    "markdownPlaceholder": "Edit Markdown source directly...",
+    "preview": "Preview",
+    "markdownSource": "Markdown Source",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit Fullscreen",
     "saveDialog": {
       "title": "Save Conversation",
       "description": "Add a title for this conversation for easy reference later",
@@ -452,7 +459,15 @@
     "sendShortcut": "Press {key} + {enter} to send",
     "sendShortcutEnter": "Press Enter to send, Shift + Enter for new line",
     "rag": "RAG",
-    "generating": "Generating..."
+    "generating": "Generating...",
+    "copy": "Copy",
+    "copied": "Copied",
+    "retry": "Retry",
+    "retryHint": "Resend this message",
+    "back": "Back",
+    "backHint": "Delete this and subsequent messages",
+    "edit": "Edit",
+    "editHint": "Edit this message"
   },
   "knowledgeBase": {
     "title": "Knowledge Base",
@@ -682,13 +697,28 @@
     "setDefaultError": "Failed to set default workspace",
     "deleteSuccess": "Workspace deleted successfully",
     "deleteSuccessDescription": "Workspace has been deleted",
-    "deleteError": "Failed to delete workspace"
+    "deleteError": "Failed to delete workspace",
+    "edit": "Edit",
+    "editTitle": "Edit Workspace",
+    "editDescription": "Modify workspace name, description, icon and color",
+    "editSuccess": "Workspace updated successfully",
+    "editSuccessDescription": "Workspace info has been updated",
+    "editError": "Failed to update workspace",
+    "details": "Details",
+    "detailsTitle": "Workspace Details",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "isDefault": "Default Workspace",
+    "yes": "Yes",
+    "no": "No",
+    "documentCount": "Documents",
+    "prdCount": "PRDs"
   },
   "defaults": {
     "untitledProject": "Untitled Project",
     "untitledPrd": "Untitled PRD",
     "untitled": "Untitled",
-    "localWorkspace": "Local",
+    "localWorkspace": "Default Workspace",
     "archMind": "ArchMind"
   },
   "errors": {

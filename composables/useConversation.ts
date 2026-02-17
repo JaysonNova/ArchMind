@@ -216,6 +216,21 @@ export function useConversation () {
     }
   }
 
+  // Delete messages from a specific message onwards (back functionality)
+  function deleteMessagesFrom (messageId: string) {
+    const messageIndex = conversation.value.messages.findIndex(m => m.id === messageId)
+    if (messageIndex !== -1) {
+      conversation.value.messages = conversation.value.messages.slice(0, messageIndex)
+      conversation.value.updatedAt = Date.now()
+      saveToStorage()
+    }
+  }
+
+  // Get message by ID
+  function getMessage (messageId: string): ConversationMessage | undefined {
+    return conversation.value.messages.find(m => m.id === messageId)
+  }
+
   // Reset conversation
   function reset () {
     if (process.client) {
@@ -249,6 +264,8 @@ export function useConversation () {
     autoSaveToDatabase,
     switchTarget,
     updateTargetContext,
+    deleteMessagesFrom,
+    getMessage,
     reset
   }
 }

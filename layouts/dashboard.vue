@@ -274,7 +274,7 @@ const handleNewProject = () => {
     localStorage.removeItem('prototype:active')
   }
   // 导航到生成页面(使用 query 参数标记这是新建项目)
-  router.push({ path: '/generate', query: { new: '1' } })
+  router.push({ path: '/generate', query: { new: '1', immersive: '1' } })
 }
 
 const breadcrumbItems = computed(() => {

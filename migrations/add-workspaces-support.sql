@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS workspaces (
 
 -- 创建默认工作区
 INSERT INTO workspaces (id, name, description, icon, color, is_default)
-VALUES ('default', 'Local', '本地默认工作区', '🏠', '#3B82F6', TRUE)
+VALUES ('default', '默认工作区', '系统默认工作区，用于组织您的项目和文档', '🏠', '#3B82F6', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- 为现有表添加 workspace_id 字段

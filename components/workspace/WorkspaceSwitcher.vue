@@ -159,6 +159,21 @@
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
+                  @click="handleEdit(workspace)"
+                  class="cursor-pointer"
+                >
+                  <Pencil class="w-4 h-4 mr-2" />
+                  {{ t('workspace.edit') }}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  @click="handleDetails(workspace)"
+                  class="cursor-pointer"
+                >
+                  <Info class="w-4 h-4 mr-2" />
+                  {{ t('workspace.details') }}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator v-if="!workspace.isDefault" />
+                <DropdownMenuItem
                   v-if="!workspace.isDefault"
                   @click="handleSetDefault(workspace.id)"
                   class="cursor-pointer"
@@ -207,16 +222,148 @@
       </DialogFooter>
     </DialogContent>
   </Dialog>
+
+  <!-- 编辑工作区对话框 -->
+  <Dialog v-model:open="showEditDialog">
+    <DialogContent class="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>{{ t('workspace.editTitle') }}</DialogTitle>
+        <DialogDescription>{{ t('workspace.editDescription') }}</DialogDescription>
+      </DialogHeader>
+
+      <div class="space-y-4 py-4">
+        <div class="space-y-2">
+          <Label for="edit-name">{{ t('workspace.name') }}</Label>
+          <Input
+            id="edit-name"
+            v-model="editForm.name"
+            :placeholder="t('workspace.namePlaceholder')"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <Label for="edit-description">{{ t('workspace.description') }} {{ t('common.optional') }}</Label>
+          <Textarea
+            id="edit-description"
+            v-model="editForm.description"
+            :placeholder="t('workspace.descriptionPlaceholder')"
+            rows="3"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <Label for="edit-icon">{{ t('workspace.icon') }}</Label>
+            <Input
+              id="edit-icon"
+              v-model="editForm.icon"
+              placeholder="📁"
+              maxlength="2"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <Label for="edit-color">{{ t('workspace.color') }}</Label>
+            <Input
+              id="edit-color"
+              v-model="editForm.color"
+              type="color"
+            />
+          </div>
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" @click="showEditDialog = false">
+          {{ t('common.cancel') }}
+        </Button>
+        <Button @click="handleEditSubmit" :disabled="!editForm.name.trim() || editing">
+          <Loader2 v-if="editing" class="w-4 h-4 mr-2 animate-spin" />
+          {{ t('common.save') }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+
+  <!-- 工作区详情对话框 -->
+  <Dialog v-model:open="showDetailsDialog">
+    <DialogContent class="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>{{ t('workspace.detailsTitle') }}</DialogTitle>
+      </DialogHeader>
+
+      <div v-if="detailWorkspace" class="space-y-4 py-4">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">{{ detailWorkspace.icon }}</span>
+          <div>
+            <h3 class="text-lg font-semibold">{{ detailWorkspace.name }}</h3>
+            <p v-if="detailWorkspace.description" class="text-sm text-muted-foreground">
+              {{ detailWorkspace.description }}
+            </p>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <p class="text-sm text-muted-foreground">{{ t('workspace.documentCount') }}</p>
+            <p class="text-2xl font-bold">{{ detailWorkspace.stats?.documentCount ?? 0 }}</p>
+          </div>
+          <div class="space-y-1">
+            <p class="text-sm text-muted-foreground">{{ t('workspace.prdCount') }}</p>
+            <p class="text-2xl font-bold">{{ detailWorkspace.stats?.prdCount ?? 0 }}</p>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">{{ t('workspace.isDefault') }}</span>
+            <Badge :variant="detailWorkspace.isDefault ? 'default' : 'secondary'">
+              {{ detailWorkspace.isDefault ? t('workspace.yes') : t('workspace.no') }}
+            </Badge>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">{{ t('workspace.color') }}</span>
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-block w-4 h-4 rounded-full border"
+                :style="{ backgroundColor: detailWorkspace.color }"
+              />
+              <span>{{ detailWorkspace.color }}</span>
+            </div>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">{{ t('workspace.createdAt') }}</span>
+            <span>{{ formatDate(detailWorkspace.createdAt) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">{{ t('workspace.updatedAt') }}</span>
+            <span>{{ formatDate(detailWorkspace.updatedAt) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button @click="showDetailsDialog = false">
+          {{ t('common.close') }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ChevronsUpDown, Plus, Settings, MoreVertical, Star, Trash2, Loader2 } from 'lucide-vue-next'
-import { useWorkspace } from '~/composables/useWorkspace'
+import { ChevronsUpDown, Plus, Settings, MoreVertical, Star, Trash2, Loader2, Pencil, Info } from 'lucide-vue-next'
+import { useWorkspace, type Workspace } from '~/composables/useWorkspace'
 import { useToast } from '~/components/ui/toast/use-toast'
 import { Button } from '~/components/ui/button'
 import { Badge } from '~/components/ui/badge'
 import { Card } from '~/components/ui/card'
+import { Separator } from '~/components/ui/separator'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Textarea } from '~/components/ui/textarea'
@@ -249,6 +396,7 @@ const {
   loadWorkspaces,
   switchWorkspace,
   createWorkspace,
+  updateWorkspace,
   deleteWorkspace,
   setDefaultWorkspace
 } = useWorkspace()
@@ -265,6 +413,21 @@ const newWorkspace = ref({
   icon: '📁',
   color: '#3B82F6'
 })
+
+// 编辑工作区相关状态
+const showEditDialog = ref(false)
+const editing = ref(false)
+const editWorkspaceId = ref<string | null>(null)
+const editForm = ref({
+  name: '',
+  description: '',
+  icon: '📁',
+  color: '#3B82F6'
+})
+
+// 查看详情相关状态
+const showDetailsDialog = ref(false)
+const detailWorkspace = ref<Workspace | null>(null)
 
 onMounted(async () => {
   try {
@@ -354,6 +517,63 @@ async function handleSetDefault (workspaceId: string) {
 function handleDelete (workspaceId: string) {
   workspaceToDelete.value = workspaceId
   deleteDialogOpen.value = true
+}
+
+function handleEdit (workspace: Workspace) {
+  editWorkspaceId.value = workspace.id
+  editForm.value = {
+    name: workspace.name,
+    description: workspace.description || '',
+    icon: workspace.icon || '📁',
+    color: workspace.color || '#3B82F6'
+  }
+  showEditDialog.value = true
+}
+
+async function handleEditSubmit () {
+  if (!editWorkspaceId.value || !editForm.value.name.trim()) return
+
+  editing.value = true
+  try {
+    await updateWorkspace(editWorkspaceId.value, {
+      name: editForm.value.name.trim(),
+      description: editForm.value.description.trim() || undefined,
+      icon: editForm.value.icon || '📁',
+      color: editForm.value.color || '#3B82F6'
+    })
+
+    toast({
+      title: t('workspace.editSuccess'),
+      description: t('workspace.editSuccessDescription')
+    })
+
+    showEditDialog.value = false
+  } catch (error) {
+    console.error('Failed to update workspace:', error)
+    toast({
+      title: t('workspace.editError'),
+      description: error instanceof Error ? error.message : undefined,
+      variant: 'destructive'
+    })
+  } finally {
+    editing.value = false
+  }
+}
+
+function handleDetails (workspace: Workspace) {
+  detailWorkspace.value = workspace
+  showDetailsDialog.value = true
+}
+
+function formatDate (dateString: string) {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 async function confirmDelete () {

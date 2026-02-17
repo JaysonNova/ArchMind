@@ -20,14 +20,7 @@
       class="flex-shrink-0 px-4 py-2 bg-muted/30 border-b border-border"
     >
       <div class="flex items-center gap-2">
-        <div class="flex gap-1">
-          <span
-            v-for="i in 5"
-            :key="i"
-            class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-            :style="{ animationDelay: `${i * 0.1}s` }"
-          />
-        </div>
+        <Loader2 class="w-4 h-4 text-primary animate-spin" />
         <span class="text-sm text-muted-foreground">{{ stageLabel }}</span>
         <span class="text-xs text-muted-foreground/60 ml-auto">
           {{ Math.round(prototypeState.generationProgress.value.length / 1024 * 10) / 10 }} KB
@@ -49,16 +42,10 @@
       <!-- 生成中 loading 动画 -->
       <div class="flex flex-col items-center gap-6 max-w-md text-center">
         <!-- 动态图标 -->
-        <div class="relative w-20 h-20">
-          <div class="absolute inset-0 rounded-full border-4 border-muted animate-ping opacity-20" />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <component
-              :is="stageIcon"
-              class="w-10 h-10 text-primary transition-all duration-500"
-              :class="{ 'animate-pulse': true }"
-            />
-          </div>
-        </div>
+        <component
+          :is="stageIcon"
+          class="w-10 h-10 text-primary animate-spin"
+        />
 
         <!-- 阶段文字 -->
         <div class="space-y-2">

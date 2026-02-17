@@ -32,29 +32,12 @@ export interface LogicCoverageMetrics {
 export class LogicCoverageCalculator {
   /**
    * 计算 PRD 的 Logic Coverage
+   * 如果没有 Logic Map，则基于 PRD 内容估算覆盖率
    */
   static calculate(prdContent: string, logicMapData: LogicMapData | null): LogicCoverageMetrics {
-    // 如果没有 Logic Map,返回 0
+    // 如果没有 Logic Map，使用纯 PRD 估算
     if (!logicMapData || logicMapData.nodes.length === 0) {
-      return {
-        coverage: 0,
-        featureCoverage: 0,
-        roleCoverage: 0,
-        entityCoverage: 0,
-        relationshipDensity: 0,
-        details: {
-          totalNodes: 0,
-          featureNodes: 0,
-          roleNodes: 0,
-          entityNodes: 0,
-          totalEdges: 0,
-          dependencyEdges: 0,
-          interactionEdges: 0,
-          dataflowEdges: 0,
-          estimatedRequiredNodes: 0,
-          estimatedRequiredEdges: 0
-        }
-      }
+      return this.estimateFromPrdOnly(prdContent)
     }
 
     // 统计节点数量
@@ -124,6 +107,95 @@ export class LogicCoverageCalculator {
         dataflowEdges,
         estimatedRequiredNodes: estimatedRequiredNodes.total,
         estimatedRequiredEdges
+      }
+    }
+  }
+
+  /**
+   * 仅基于 PRD 内容估算覆盖率（无需逻辑图谱）
+   * 使用启发式规则分析 PRD 文本的完整性和结构化程度
+   */
+  static estimateFromPrdOnly(prdContent: string): LogicCoverageMetrics {
+    if (!prdContent || prdContent.trim().length === 0) {
+      return {
+        coverage: 0,
+        featureCoverage: 0,
+        roleCoverage: 0,
+        entityCoverage: 0,
+        relationshipDensity: 0,
+        details: {
+          totalNodes: 0,
+          featureNodes: 0,
+          roleNodes: 0,
+          entityNodes: 0,
+          totalEdges: 0,
+          dependencyEdges: 0,
+          interactionEdges: 0,
+          dataflowEdges: 0,
+          estimatedRequiredNodes: 0,
+          estimatedRequiredEdges: 0
+        }
+      }
+    }
+
+    const estimated = this.estimateRequiredNodes(prdContent)
+    const lowerContent = prdContent.toLowerCase()
+
+    // 1. 功能覆盖度 (40%): 基于 PRD 中功能描述的完整性
+    // 检测是否有结构化的功能章节
+    const hasFeatureSection = lowerContent.includes('核心功能') ||
+                              lowerContent.includes('功能需求') ||
+                              lowerContent.includes('features') ||
+                              lowerContent.includes('功能列表')
+    const featureListItems = (prdContent.match(/^[-*•]\s+.+/gm) || []).length
+    const featureCoverage = hasFeatureSection
+      ? Math.min(100, 50 + featureListItems * 5) // 有章节给50分，每个列表项加5分
+      : Math.min(100, featureListItems * 8) // 无章节，仅靠列表项
+
+    // 2. 关系密度 (30%): 基于 PRD 中的关联描述
+    // 检测是否有功能依赖、用户流程、数据流等描述
+    const relationKeywords = ['依赖', '关联', '调用', '交互', '流程', '数据流', '接口', '联动', '触发']
+    const relationMatches = relationKeywords.reduce((sum, kw) =>
+      sum + (lowerContent.match(new RegExp(kw, 'gi'))?.length || 0), 0)
+    const relationshipDensity = Math.min(100, relationMatches * 8)
+
+    // 3. 角色覆盖度 (20%): 基于 PRD 中用户角色的描述
+    const roleKeywords = ['用户', '角色', '管理员', '访客', '会员', '游客', '运营', '开发']
+    const roleMatches = roleKeywords.reduce((sum, kw) =>
+      sum + (lowerContent.match(new RegExp(kw, 'gi'))?.length || 0), 0)
+    const roleCoverage = Math.min(100, Math.floor(roleMatches / 2) * 10)
+
+    // 4. 实体覆盖度 (10%): 基于 PRD 中数据实体的描述
+    const entityKeywords = ['数据', '表', '字段', '模型', '实体', '存储', '缓存', '数据库']
+    const entityMatches = entityKeywords.reduce((sum, kw) =>
+      sum + (lowerContent.match(new RegExp(kw, 'gi'))?.length || 0), 0)
+    const entityCoverage = Math.min(100, Math.floor(entityMatches / 3) * 10)
+
+    // 综合覆盖率
+    const coverage = Math.round(
+      featureCoverage * 0.4 +
+      relationshipDensity * 0.3 +
+      roleCoverage * 0.2 +
+      entityCoverage * 0.1
+    )
+
+    return {
+      coverage: Math.min(coverage, 100),
+      featureCoverage: Math.round(featureCoverage),
+      roleCoverage: Math.round(roleCoverage),
+      entityCoverage: Math.round(entityCoverage),
+      relationshipDensity: Math.round(relationshipDensity),
+      details: {
+        totalNodes: estimated.total,
+        featureNodes: estimated.features,
+        roleNodes: estimated.roles,
+        entityNodes: estimated.entities,
+        totalEdges: 0,
+        dependencyEdges: 0,
+        interactionEdges: 0,
+        dataflowEdges: 0,
+        estimatedRequiredNodes: estimated.total,
+        estimatedRequiredEdges: Math.floor(estimated.total * 1.75)
       }
     }
   }

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-400"
+    class="group flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-400"
     :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
   >
     <!-- AI Avatar -->
@@ -25,21 +25,82 @@
           <div v-else class="message-markdown text-sm leading-relaxed break-words" v-html="renderedContent" />
 
           <!-- Streaming indicator -->
-          <div v-if="message.isStreaming" class="flex items-center gap-2 mt-3 text-xs opacity-70">
-            <div class="flex gap-1">
-              <div class="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style="animation-delay: 0ms" />
-              <div class="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style="animation-delay: 150ms" />
-              <div class="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style="animation-delay: 300ms" />
-            </div>
+          <div v-if="message.isStreaming" class="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+            <Loader2 class="w-3 h-3 animate-spin" />
             <span>{{ $t('chat.generating') }}</span>
           </div>
         </CardContent>
       </Card>
 
-      <!-- Metadata -->
+      <!-- Action Buttons & Metadata -->
       <div class="flex items-center gap-2 mt-1.5 px-1">
+        <!-- Action Buttons (visible on hover) -->
+        <div
+          v-if="!message.isStreaming"
+          class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <!-- Copy Button -->
+          <TooltipProvider :delay-duration="300">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-6 w-6"
+                  @click="handleCopy"
+                >
+                  <Check v-if="copied" class="w-3 h-3 text-green-500" />
+                  <Copy v-else class="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" class="text-xs">
+                {{ copied ? $t('chat.copied') : $t('chat.copy') }}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <!-- Retry Button (User messages only) -->
+          <TooltipProvider v-if="message.role === 'user'" :delay-duration="300">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-6 w-6"
+                  @click="handleRetry"
+                >
+                  <RefreshCw class="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" class="text-xs">
+                {{ $t('chat.retryHint') }}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <!-- Back Button (Delete from here) -->
+          <TooltipProvider :delay-duration="300">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-6 w-6 hover:bg-destructive/10 hover:text-destructive"
+                  @click="handleBack"
+                >
+                  <ArrowLeftFromLine class="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" class="text-xs">
+                {{ $t('chat.backHint') }}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        <!-- Metadata -->
         <Badge v-if="message.modelUsed" variant="secondary" class="text-xs">
-          <div class="w-1.5 h-1.5 bg-current rounded-full mr-1.5 animate-pulse" />
+          <Cpu class="w-3 h-3 mr-1.5" />
           {{ message.modelUsed }}
         </Badge>
         <Badge v-if="message.useRAG" variant="outline" class="text-xs gap-1">
@@ -62,15 +123,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
-import { Sparkles, User, BookOpen } from 'lucide-vue-next'
+import { Sparkles, User, BookOpen, Cpu, Loader2, Copy, Check, RefreshCw, ArrowLeftFromLine } from 'lucide-vue-next'
+import { Button } from '~/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '~/components/ui/tooltip'
 import type { ConversationMessage } from '~/types/conversation'
 
 const props = defineProps<{
   message: ConversationMessage
 }>()
+
+const emit = defineEmits<{
+  retry: [message: ConversationMessage]
+  back: [message: ConversationMessage]
+}>()
+
+const copied = ref(false)
 
 const renderedContent = computed(() => {
   if (props.message.role === 'user') return ''
@@ -82,6 +152,26 @@ function formatTime (timestamp: number) {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+async function handleCopy () {
+  try {
+    await navigator.clipboard.writeText(props.message.content)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch {
+    console.error('Failed to copy message')
+  }
+}
+
+function handleRetry () {
+  emit('retry', props.message)
+}
+
+function handleBack () {
+  emit('back', props.message)
 }
 </script>
 

@@ -60,6 +60,6 @@ const isActive = (path: string) => {
 }
 
 function handleNewProject() {
-  router.push('/generate')
+  router.push('/generate?new=1&immersive=1')
 }
 </script>

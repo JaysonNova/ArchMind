@@ -327,6 +327,13 @@
     "hidePreview": "隐藏预览",
     "emptyPreview": "开始对话后,这里将显示生成的 PRD 文档",
     "editorPlaceholder": "在此直接编辑 PRD 文档,或通过左侧对话生成内容...",
+    "richTextMode": "富文本",
+    "markdownMode": "Markdown",
+    "markdownPlaceholder": "直接编辑 Markdown 源码...",
+    "preview": "预览",
+    "markdownSource": "Markdown 源码",
+    "fullscreen": "全屏编辑",
+    "exitFullscreen": "退出全屏",
     "saveDialog": {
       "title": "保存对话",
       "description": "为这次对话添加一个标题,方便日后查找",
@@ -452,7 +459,15 @@
     "sendShortcut": "按 {key} + {enter} 发送",
     "sendShortcutEnter": "按 Enter 发送,Shift + Enter 换行",
     "rag": "RAG",
-    "generating": "生成中..."
+    "generating": "生成中...",
+    "copy": "复制",
+    "copied": "已复制",
+    "retry": "重试",
+    "retryHint": "重新发送此消息",
+    "back": "回退",
+    "backHint": "删除此消息及后续消息",
+    "edit": "编辑",
+    "editHint": "编辑此消息"
   },
   "knowledgeBase": {
     "title": "知识库",
@@ -682,13 +697,28 @@
     "setDefaultError": "设置默认工作区失败",
     "deleteSuccess": "工作区删除成功",
     "deleteSuccessDescription": "工作区已被删除",
-    "deleteError": "删除工作区失败"
+    "deleteError": "删除工作区失败",
+    "edit": "编辑",
+    "editTitle": "编辑工作区",
+    "editDescription": "修改工作区的名称、描述、图标和颜色",
+    "editSuccess": "工作区更新成功",
+    "editSuccessDescription": "工作区信息已更新",
+    "editError": "更新工作区失败",
+    "details": "查看详情",
+    "detailsTitle": "工作区详情",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间",
+    "isDefault": "默认工作区",
+    "yes": "是",
+    "no": "否",
+    "documentCount": "文档数量",
+    "prdCount": "PRD 数量"
   },
   "defaults": {
     "untitledProject": "未命名项目",
     "untitledPrd": "未命名 PRD",
     "untitled": "未命名",
-    "localWorkspace": "本地工作区",
+    "localWorkspace": "默认工作区",
     "archMind": "ArchMind"
   },
   "errors": {

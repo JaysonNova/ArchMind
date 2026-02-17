@@ -11,6 +11,8 @@
           v-for="message in messages"
           :key="message.id"
           :message="message"
+          @retry="handleRetry"
+          @back="handleBack"
         />
       </div>
     </div>
@@ -46,6 +48,11 @@ import { Button } from '~/components/ui/button'
 
 const props = defineProps<{
   messages: ConversationMessage[]
+}>()
+
+const emit = defineEmits<{
+  retry: [message: ConversationMessage]
+  back: [message: ConversationMessage]
 }>()
 
 const container = ref<HTMLDivElement>()
@@ -133,6 +140,16 @@ onMounted(async () => {
   await nextTick()
   scrollToBottom()
 })
+
+// Handle retry event from MessageBubble
+function handleRetry(message: ConversationMessage) {
+  emit('retry', message)
+}
+
+// Handle back event from MessageBubble
+function handleBack(message: ConversationMessage) {
+  emit('back', message)
+}
 </script>
 
 <style scoped>
