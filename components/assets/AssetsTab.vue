@@ -7,6 +7,7 @@ import { useToast } from '~/components/ui/toast/use-toast'
 import AssetsToolbar from './AssetsToolbar.vue'
 import AssetGrid from './AssetGrid.vue'
 import AssetUploadDialog from './AssetUploadDialog.vue'
+import AssetGenerateDialog from './AssetGenerateDialog.vue'
 
 const props = defineProps<{
   prdContent: string
@@ -52,13 +53,6 @@ function handleUpload () {
 }
 
 function handleGenerate () {
-  if (!props.prdContent) {
-    toast({
-      title: t('assets.noPrdContent'),
-      variant: 'destructive'
-    })
-    return
-  }
   showGenerateDialog.value = true
 }
 
@@ -67,6 +61,13 @@ function handleUploadSuccess () {
     title: t('assets.uploadSuccess'),
     variant: 'success'
   })
+}
+
+function handleGenerateSuccess () {
+  // 刷新资源列表
+  if (props.prdId) {
+    fetchPrdAssets(props.prdId)
+  }
 }
 </script>
 
@@ -126,6 +127,14 @@ function handleUploadSuccess () {
       v-model:open="showUploadDialog"
       :prd-id="prdId"
       @success="handleUploadSuccess"
+    />
+
+    <!-- Generate Dialog -->
+    <AssetGenerateDialog
+      v-model:open="showGenerateDialog"
+      :prd-id="prdId"
+      :prd-content="prdContent"
+      @success="handleGenerateSuccess"
     />
   </div>
 </template>

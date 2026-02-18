@@ -82,6 +82,9 @@ export type AIProviderType =
   | 'ollama'
   | 'custom'  // 自定义第三方 API
 
+// 图片生成提供商类型 (独立于文本模型)
+export type ImageProviderType = 'wanx' | 'dall-e' | 'stability'
+
 // 自定义 API 配置（用于第三方中转站）
 export interface CustomAPIConfig {
   id: string  // 唯一标识，如 "custom-openai-proxy"
@@ -120,6 +123,32 @@ export interface AIModelDefinition {
   costEstimate: {
     input: string
     output: string
+  }
+}
+
+// 图片生成提供商配置
+export interface ImageProviderConfig {
+  id: ImageProviderType
+  name: string
+  description: string
+  website: string
+  authType: 'api_key'
+  apiKeyPlaceholder?: string
+  models: ImageModelDefinition[]
+}
+
+export interface ImageModelDefinition {
+  id: string
+  name: string
+  description: string
+  capabilities: {
+    maxResolution: string
+    supportedSizes: string[]
+    supportsEdit: boolean
+    supportsInpaint: boolean
+  }
+  costEstimate: {
+    perImage: string
   }
 }
 

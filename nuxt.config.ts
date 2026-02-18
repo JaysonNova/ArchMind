@@ -94,9 +94,18 @@ export default defineNuxtConfig({
     ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
     databasePath: process.env.DATABASE_PATH || './data/database.db',
 
+    // Email configuration (server-side only)
+    emailHost: process.env.EMAIL_HOST || 'smtp.qq.com',
+    emailPort: parseInt(process.env.EMAIL_PORT || '465'),
+    emailSecure: process.env.EMAIL_SECURE !== 'false',
+    emailUser: process.env.EMAIL_USER,
+    emailPass: process.env.EMAIL_PASS,
+    emailFrom: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+
     // Public keys (exposed to client)
     public: {
-      appUrl: process.env.APP_URL || 'http://localhost:3000'
+      appUrl: process.env.APP_URL || 'http://localhost:3000',
+      baseUrl: process.env.BASE_URL || process.env.APP_URL || 'http://localhost:3000'
     }
   },
 

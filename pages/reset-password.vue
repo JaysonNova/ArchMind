@@ -59,12 +59,27 @@
             <img src="/logo.png" alt="ArchMind" class="logo-mini" />
             <span>ArchMind</span>
           </NuxtLink>
-          <h2 class="form-title">{{ $t('auth.login') }}</h2>
-          <p class="form-subtitle">{{ $t('auth.loginSubtitle') }}</p>
+          <h2 class="form-title">{{ $t('auth.resetPassword') }}</h2>
+          <p class="form-subtitle">{{ $t('auth.resetPasswordSubtitle') }}</p>
+        </div>
+
+        <!-- Invalid/Expired Token State -->
+        <div v-if="tokenError" class="error-state">
+          <div class="error-icon-wrapper">
+            <AlertCircle class="error-icon" />
+          </div>
+          <h3 class="error-title">{{ $t('auth.invalidToken') }}</h3>
+          <p class="error-description">
+            {{ tokenError }}
+          </p>
+          <NuxtLink to="/forgot-password" class="retry-link">
+            <RefreshCw class="w-4 h-4" />
+            {{ $t('auth.requestNewToken') }}
+          </NuxtLink>
         </div>
 
         <!-- Form -->
-        <form @submit="handleSubmit" class="auth-form">
+        <form v-else @submit="handleSubmit" class="auth-form">
           <!-- Error Alert -->
           <Transition name="shake">
             <div v-if="authStore.error" class="error-alert">
@@ -75,8 +90,8 @@
             </div>
           </Transition>
 
-          <!-- Email Field -->
-          <div class="input-group" :class="{ focused: focusedField === 'email', filled: email }">
+          <!-- Email Field (readonly) -->
+          <div class="input-group">
             <label for="email">{{ $t('auth.email') }}</label>
             <div class="input-wrapper">
               <Mail class="input-icon" />
@@ -84,11 +99,8 @@
                 id="email"
                 v-model="email"
                 type="email"
-                :placeholder="$t('auth.emailPlaceholder')"
-                :disabled="authStore.loading"
-                required
-                @focus="focusedField = 'email'"
-                @blur="focusedField = ''"
+                readonly
+                disabled
               />
               <div class="input-border"></div>
             </div>
@@ -96,16 +108,17 @@
 
           <!-- Password Field -->
           <div class="input-group" :class="{ focused: focusedField === 'password', filled: password }">
-            <label for="password">{{ $t('auth.password') }}</label>
+            <label for="password">{{ $t('auth.newPassword') }}</label>
             <div class="input-wrapper">
               <Lock class="input-icon" />
               <input
                 id="password"
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
-                :placeholder="$t('auth.passwordPlaceholder')"
+                :placeholder="$t('auth.newPasswordPlaceholder')"
                 :disabled="authStore.loading"
                 required
+                minlength="8"
                 @focus="focusedField = 'password'"
                 @blur="focusedField = ''"
               />
@@ -121,9 +134,44 @@
             </div>
           </div>
 
-          <!-- Forgot Password Link -->
-          <div class="forgot-password-link">
-            <NuxtLink to="/forgot-password">{{ $t('auth.forgotPassword') }}?</NuxtLink>
+          <!-- Confirm Password Field -->
+          <div class="input-group" :class="{ focused: focusedField === 'confirmPassword', filled: confirmPassword }">
+            <label for="confirmPassword">{{ $t('auth.confirmNewPassword') }}</label>
+            <div class="input-wrapper">
+              <Lock class="input-icon" />
+              <input
+                id="confirmPassword"
+                v-model="confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                :placeholder="$t('auth.confirmNewPasswordPlaceholder')"
+                :disabled="authStore.loading"
+                required
+                minlength="8"
+                @focus="focusedField = 'confirmPassword'"
+                @blur="focusedField = ''"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                @click="showConfirmPassword = !showConfirmPassword"
+              >
+                <Eye v-if="showConfirmPassword" class="w-5 h-5" />
+                <EyeOff v-else class="w-5 h-5" />
+              </button>
+              <div class="input-border"></div>
+            </div>
+          </div>
+
+          <!-- Password Strength Indicator -->
+          <div v-if="password" class="password-strength">
+            <div class="strength-bar">
+              <div
+                class="strength-fill"
+                :style="{ width: passwordStrengthPercent + '%' }"
+                :class="passwordStrengthClass"
+              ></div>
+            </div>
+            <span class="strength-text" :class="passwordStrengthClass">{{ passwordStrengthText }}</span>
           </div>
 
           <!-- Submit Button -->
@@ -131,24 +179,23 @@
             type="submit"
             class="submit-btn"
             :class="{ loading: authStore.loading }"
-            :disabled="authStore.loading"
+            :disabled="authStore.loading || !isFormValid"
           >
             <span class="btn-content">
               <Loader2 v-if="authStore.loading" class="btn-icon animate-spin" />
-              <ArrowRight v-else class="btn-icon" />
-              <span>{{ authStore.loading ? $t('auth.loggingIn') : $t('auth.login') }}</span>
+              <Check v-else class="btn-icon" />
+              <span>{{ authStore.loading ? $t('auth.resetting') : $t('auth.resetPassword') }}</span>
             </span>
             <div class="btn-glow"></div>
           </button>
         </form>
 
         <!-- Footer -->
-        <div class="form-footer">
+        <div v-if="!tokenError" class="form-footer">
           <p>
-            {{ $t('auth.noAccount') }}
-            <NuxtLink to="/register" class="link-highlight">
-              {{ $t('auth.register') }}
-              <ArrowRight class="link-arrow" />
+            <NuxtLink to="/login" class="link-highlight">
+              <ArrowLeft class="link-arrow" />
+              {{ $t('auth.backToLogin') }}
             </NuxtLink>
           </p>
         </div>
@@ -158,8 +205,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Sparkles, Eye, EyeOff, Loader2, AlertCircle, Mail, Lock, ArrowRight, Zap, Shield, Layers } from 'lucide-vue-next'
+import { ref, computed, onMounted } from 'vue'
+import { Lock, Mail, Eye, EyeOff, Loader2, AlertCircle, ArrowLeft, Check, RefreshCw, Zap, Shield, Layers } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import ShinyText from '~/components/ui/bits/ShinyText.vue'
 
@@ -168,34 +215,95 @@ definePageMeta({
 })
 
 const { t } = useI18n()
-const router = useRouter()
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 
 // Clear error on page load
 onMounted(() => {
   authStore.clearError()
+
+  // Get token and email from URL
+  const token = route.query.token as string
+  const emailFromQuery = route.query.email as string
+
+  if (!token || !emailFromQuery) {
+    tokenError.value = t('auth.missingToken')
+    return
+  }
+
+  tokenValue.value = token
+  email.value = emailFromQuery
 })
 
 // Form state
+const tokenValue = ref('')
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const focusedField = ref('')
+const tokenError = ref('')
+
+// Password strength calculation
+const passwordStrengthPercent = computed(() => {
+  const pwd = password.value
+  if (!pwd) return 0
+
+  let strength = 0
+  if (pwd.length >= 8) strength += 25
+  if (pwd.length >= 12) strength += 15
+  if (/[a-z]/.test(pwd)) strength += 15
+  if (/[A-Z]/.test(pwd)) strength += 15
+  if (/[0-9]/.test(pwd)) strength += 15
+  if (/[^a-zA-Z0-9]/.test(pwd)) strength += 15
+
+  return Math.min(100, strength)
+})
+
+const passwordStrengthClass = computed(() => {
+  const percent = passwordStrengthPercent.value
+  if (percent < 40) return 'weak'
+  if (percent < 70) return 'medium'
+  return 'strong'
+})
+
+const passwordStrengthText = computed(() => {
+  const cls = passwordStrengthClass.value
+  if (cls === 'weak') return t('auth.passwordWeak')
+  if (cls === 'medium') return t('auth.passwordMedium')
+  return t('auth.passwordStrong')
+})
+
+// Form validation
+const isFormValid = computed(() => {
+  return (
+    password.value.length >= 8 &&
+    confirmPassword.value.length >= 8 &&
+    password.value === confirmPassword.value
+  )
+})
 
 // Submit handler
 const handleSubmit = async (e: Event) => {
   e.preventDefault()
 
-  if (!email.value || !password.value) {
+  if (!isFormValid.value) {
     return
   }
 
   authStore.clearError()
-  const success = await authStore.login(email.value, password.value)
-  if (success) {
-    const redirect = route.query.redirect as string || '/app'
-    router.push(redirect)
+  const result = await authStore.resetPassword(
+    tokenValue.value,
+    email.value,
+    password.value,
+    confirmPassword.value
+  )
+
+  if (result.success) {
+    // Redirect to app after successful password reset
+    router.push('/app')
   }
 }
 </script>
@@ -208,7 +316,7 @@ const handleSubmit = async (e: Event) => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
-  padding-top: 4rem; /* Account for nav bar */
+  padding-top: 4rem;
 }
 
 @media (max-width: 968px) {
@@ -238,7 +346,7 @@ const handleSubmit = async (e: Event) => {
   max-width: 400px;
 }
 
-/* Logo Animation - Monochrome */
+/* Logo Animation */
 .logo-container {
   position: relative;
   width: 120px;
@@ -326,7 +434,7 @@ const handleSubmit = async (e: Event) => {
   margin-top: 0.25rem;
 }
 
-/* Gradient Text Effects - Monochrome */
+/* Gradient Text Effects */
 .gradient-text {
   background: linear-gradient(
     135deg,
@@ -515,6 +623,62 @@ const handleSubmit = async (e: Event) => {
   letter-spacing: 0.01em;
 }
 
+/* ===== Error State ===== */
+.error-state {
+  text-align: center;
+  padding: 2rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.error-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  background: hsl(var(--destructive) / 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-icon {
+  width: 40px;
+  height: 40px;
+  color: hsl(var(--destructive));
+}
+
+.error-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.75rem;
+}
+
+.error-description {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.retry-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: hsl(var(--foreground));
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  background: hsl(var(--accent));
+}
+
+.retry-link:hover {
+  background: hsl(var(--accent) / 0.8);
+}
+
 /* ===== Form Styles ===== */
 .auth-form {
   display: flex;
@@ -625,7 +789,7 @@ const handleSubmit = async (e: Event) => {
 }
 
 .input-wrapper input:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -675,24 +839,59 @@ const handleSubmit = async (e: Event) => {
   background: hsl(var(--accent));
 }
 
-/* Forgot Password Link */
-.forgot-password-link {
-  text-align: right;
+/* Password Strength */
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   margin-top: -0.5rem;
 }
 
-.forgot-password-link a {
-  color: hsl(var(--muted-foreground));
-  text-decoration: none;
-  font-size: 0.8125rem;
-  transition: color 0.3s ease;
+.strength-bar {
+  flex: 1;
+  height: 4px;
+  background: hsl(var(--border));
+  border-radius: 2px;
+  overflow: hidden;
 }
 
-.forgot-password-link a:hover {
-  color: hsl(var(--foreground));
+.strength-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+  border-radius: 2px;
 }
 
-/* Submit Button - Monochrome */
+.strength-fill.weak {
+  background: hsl(var(--destructive));
+}
+
+.strength-fill.medium {
+  background: hsl(45, 93%, 47%);
+}
+
+.strength-fill.strong {
+  background: hsl(142, 76%, 36%);
+}
+
+.strength-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.strength-text.weak {
+  color: hsl(var(--destructive));
+}
+
+.strength-text.medium {
+  color: hsl(45, 93%, 47%);
+}
+
+.strength-text.strong {
+  color: hsl(142, 76%, 36%);
+}
+
+/* Submit Button */
 .submit-btn {
   position: relative;
   width: 100%;
@@ -741,7 +940,7 @@ const handleSubmit = async (e: Event) => {
 }
 
 .submit-btn:hover:not(:disabled) .btn-icon {
-  transform: translateX(4px);
+  transform: scale(1.1);
 }
 
 .btn-glow {
@@ -805,7 +1004,7 @@ const handleSubmit = async (e: Event) => {
 }
 
 .link-highlight:hover .link-arrow {
-  transform: translateX(4px);
+  transform: translateX(-4px);
 }
 
 /* Float Animation */

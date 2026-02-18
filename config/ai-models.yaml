@@ -33,10 +33,10 @@ ai_models:
   # 模型列表配置
   # 模型列表配置
   models:
-    # 智谱 ChatGLM 4.7 (推理最强)
+    # 智谱 GLM 4.7 (推理最强)
     glm-4.7:
       enabled: true
-      name: "ChatGLM 4.7"
+      name: "GLM 4.7"
       provider: "Zhipu AI"
       description: "最新推理模型，支持思考模式，适合复杂逻辑分析和 PRD 生成"
       api_key_env: "GLM_API_KEY"
@@ -54,10 +54,10 @@ ai_models:
         provider: "glm"
         model: "embedding-3"
         dimensions: 2048
-    # 智谱 ChatGLM 4.6v (图像理解)
+    # 智谱 GLM 4.6v (图像理解)
     glm-4.6v:
       enabled: true
-      name: "ChatGLM 4.6v"
+      name: "GLM 4.6v"
       provider: "Zhipu AI"
       description: "多模态模型，支持图像理解，600万 tokens 额度"
       api_key_env: "GLM_API_KEY"
@@ -76,10 +76,10 @@ ai_models:
         model: "embedding-3"
         dimensions: 2048
 
-    # 智谱 ChatGLM 4.5 Air (经济版)
+    # 智谱 GLM 4.5 Air (经济版)
     glm-4.5-air:
       enabled: true
-      name: "ChatGLM 4.5 Air"
+      name: "GLM 4.5 Air"
       provider: "Zhipu AI"
       description: "经济版模型，最低成本，适合快速原型和成本敏感场景，1200万 tokens 额度"
       api_key_env: "GLM_API_KEY"

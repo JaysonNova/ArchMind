@@ -3,7 +3,7 @@
  */
 
 import { defineStore } from 'pinia'
-import type { User, AuthState, RegisterRequest, LoginRequest, AuthResponse } from '~/types/auth'
+import type { User, AuthState, RegisterRequest, LoginRequest, AuthResponse, ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordRequest, ResetPasswordResponse } from '~/types/auth'
 
 // 用户更新请求类型
 interface UpdateUserRequest {
@@ -306,6 +306,65 @@ export const useAuthStore = defineStore('auth', {
         }
       } catch (error: any) {
         const message = error.data?.message || error.message || '修改密码失败'
+        this.error = message
+        return { success: false, message }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * 忘记密码 - 发送重置邮件
+     */
+    async forgotPassword(email: string): Promise<{ success: boolean; message?: string }> {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await $fetch<ForgotPasswordResponse>('/api/auth/forgot-password', {
+          method: 'POST',
+          body: { email } as ForgotPasswordRequest
+        })
+
+        if (response.success) {
+          return { success: true, message: response.message }
+        } else {
+          this.error = response.message || '发送重置邮件失败'
+          return { success: false, message: response.message }
+        }
+      } catch (error: any) {
+        const message = error.data?.message || error.message || '发送重置邮件失败'
+        this.error = message
+        return { success: false, message }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * 重置密码
+     */
+    async resetPassword(token: string, email: string, password: string, confirmPassword: string): Promise<{ success: boolean; message?: string }> {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await $fetch<ResetPasswordResponse>('/api/auth/reset-password', {
+          method: 'POST',
+          body: { token, email, password, confirmPassword } as ResetPasswordRequest,
+          credentials: 'include'
+        })
+
+        if (response.success && response.user) {
+          this.user = response.user
+          this.isAuthenticated = true
+          return { success: true, message: response.message }
+        } else {
+          this.error = response.message || '重置密码失败'
+          return { success: false, message: response.message }
+        }
+      } catch (error: any) {
+        const message = error.data?.message || error.message || '重置密码失败'
         this.error = message
         return { success: false, message }
       } finally {

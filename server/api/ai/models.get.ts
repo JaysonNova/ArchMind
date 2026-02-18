@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     const wenxinConfig = userConfigMap.get('wenxin')
     config.baiduApiKey = wenxinConfig?.apiKey || runtimeConfig.baiduApiKey
 
-    // 智谱 ChatGLM
+    // 智谱 GLM
     const glmConfig = userConfigMap.get('glm')
     config.glmApiKey = glmConfig?.apiKey || runtimeConfig.glmApiKey
 

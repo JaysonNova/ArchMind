@@ -45,3 +45,18 @@ export function getUserIdFromToken(token: string): string | null {
   const payload = verifyToken(token)
   return payload?.userId ?? null
 }
+
+/**
+ * 设置认证 Cookie
+ * @param event H3 事件对象
+ * @param token JWT Token
+ */
+export function setAuthCookie(event: any, token: string): void {
+  setCookie(event, 'auth_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 7, // 7 天
+    path: '/'
+  })
+}

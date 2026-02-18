@@ -176,7 +176,7 @@ export default defineEventHandler(async (event) => {
           })
           availableModels = providerConfig.models.map(m => m.id)
         } catch (e: any) {
-          throw createError({ statusCode: 400, message: `ChatGLM API 验证失败: ${e.message}` })
+          throw createError({ statusCode: 400, message: `GLM API 验证失败: ${e.message}` })
         }
         break
 

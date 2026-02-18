@@ -22,6 +22,11 @@ export interface UpdateUserInput {
   isActive?: boolean
 }
 
+export interface ResetTokenData {
+  resetToken: string
+  resetTokenExpires: Date
+}
+
 export class UserDAO {
   /**
    * 根据 ID 获取用户
@@ -203,6 +208,71 @@ export class UserDAO {
     const sql = 'SELECT 1 FROM users WHERE username = $1'
     const result = await dbClient.query(sql, [username])
     return result.rows.length > 0
+  }
+
+  /**
+   * 设置密码重置 Token
+   */
+  static async setResetToken(email: string, token: string, expiresAt: Date): Promise<boolean> {
+    const sql = `
+      UPDATE users
+      SET reset_token = $1, reset_token_expires = $2, updated_at = $3
+      WHERE email = $4
+    `
+    const result = await dbClient.query(sql, [token, expiresAt.toISOString(), new Date().toISOString(), email])
+    return result.rowCount! > 0
+  }
+
+  /**
+   * 根据重置 Token 获取用户
+   */
+  static async getByResetToken(token: string): Promise<User | null> {
+    const sql = `
+      SELECT * FROM users
+      WHERE reset_token = $1 AND reset_token_expires > $2
+    `
+    const result = await dbClient.query<any>(sql, [token, new Date().toISOString()])
+
+    if (result.rows.length === 0) {
+      return null
+    }
+
+    return this.mapRowToUser(result.rows[0])
+  }
+
+  /**
+   * 重置密码
+   */
+  static async resetPassword(token: string, newPasswordHash: string): Promise<User | null> {
+    const now = new Date().toISOString()
+
+    const sql = `
+      UPDATE users
+      SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = $2
+      WHERE reset_token = $3 AND reset_token_expires > $4
+      RETURNING *
+    `
+
+    const result = await dbClient.query<any>(sql, [newPasswordHash, now, token, now])
+
+    if (result.rows.length === 0) {
+      return null
+    }
+
+    return this.mapRowToUser(result.rows[0])
+  }
+
+  /**
+   * 清除重置 Token
+   */
+  static async clearResetToken(email: string): Promise<boolean> {
+    const sql = `
+      UPDATE users
+      SET reset_token = NULL, reset_token_expires = NULL, updated_at = $1
+      WHERE email = $2
+    `
+    const result = await dbClient.query(sql, [new Date().toISOString(), email])
+    return result.rowCount! > 0
   }
 
   /**

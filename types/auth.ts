@@ -24,6 +24,30 @@ export interface RegisterRequest {
   fullName?: string
 }
 
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ResetPasswordRequest {
+  token: string
+  email: string
+  password: string
+  confirmPassword: string
+}
+
+export interface ForgotPasswordResponse {
+  success: boolean
+  message?: string
+  devCode?: string // 仅开发环境
+  devResetUrl?: string // 仅开发环境
+}
+
+export interface ResetPasswordResponse {
+  success: boolean
+  message?: string
+  user?: User
+}
+
 export interface AuthResponse {
   success: boolean
   user?: User

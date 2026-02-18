@@ -1,6 +1,6 @@
 /**
  * GLM AI 模型适配器
- * 使用 OpenAI SDK 调用 Zhipu AI ChatGLM 模型
+ * 使用 OpenAI SDK 调用智谱 AI GLM 模型
  * GLM 提供 OpenAI 兼容的 API，这样可以使用 OpenAI SDK 进行调用
  */
 
@@ -8,7 +8,7 @@ import OpenAI from 'openai'
 import type { AIModelAdapter, GenerateOptions, ModelCapabilities, CostEstimate } from '~/lib/ai/types'
 
 export class GLMAdapter implements AIModelAdapter {
-  name = 'ChatGLM'
+  name = 'GLM'
   provider = 'glm'
   modelId: string
   private client: OpenAI

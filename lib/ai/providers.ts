@@ -470,7 +470,7 @@ export const AI_PROVIDERS: Record<AIProviderType, AIProviderConfig> = {
 
   glm: {
     id: 'glm',
-    name: '智谱 ChatGLM',
+    name: '智谱 GLM',
     description: '智谱 AI 开发的国产大模型，支持长上下文，成本极低。',
     website: 'https://open.bigmodel.cn/api-keys',
     authType: 'api_key',

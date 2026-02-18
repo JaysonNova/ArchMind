@@ -73,7 +73,27 @@ export interface AssetGenerateRequest {
   modelId: string
   prdId?: string
   count?: number // 生成数量,默认 1
+  negativePrompt?: string // 负面提示词
+  size?: string // 图片尺寸,如 "1024*1024"
 }
+
+export interface AssetEditRequest {
+  assetId: string // 要编辑的资源 ID
+  prompt: string // 编辑指令
+  modelId?: string // 使用的模型
+  function?: ImageEditFunction // 编辑功能类型
+  maskAssetId?: string // 蒙版图片 ID (用于 inpaint)
+  strength?: number // 编辑强度 0-1
+}
+
+export type ImageEditFunction =
+  | 'stylization_all' // 全局风格化
+  | 'stylization_local' // 局部风格化
+  | 'description_edit' // 指令编辑
+  | 'description_edit_with_mask' // 蒙版编辑 (inpaint)
+  | 'expand' // 图片扩展
+  | 'super_resolution' // 超分辨率
+  | 'colorization' // 上色
 
 export interface AssetGenerateResponse {
   success: boolean

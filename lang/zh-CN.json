@@ -606,7 +606,7 @@
     }
   },
   "assets": {
-    "title": "标题",
+    "title": "资源管理",
     "upload": "上传资源",
     "aiGenerate": "AI 生成",
     "uploadAsset": "上传资源",
@@ -616,6 +616,7 @@
     "uploadHint": "上传图片资源,支持 PNG, JPG, GIF, SVG, WebP 格式,最大 20MB",
     "dragDrop": "拖拽文件到此处或点击选择文件",
     "supportedFormats": "支持 PNG, JPG, GIF, SVG, WebP,最大 20MB",
+    "titleField": "标题",
     "titlePlaceholder": "例如:登录页面设计稿",
     "description": "描述",
     "descriptionPlaceholder": "为这个资源添加描述...",
@@ -627,15 +628,50 @@
     "deleteSuccess": "资源删除成功",
     "deleteFailed": "资源删除失败",
     "noPrdContent": "请先生成 PRD 内容",
+    "editSuccess": "图片编辑成功",
+    "editFailed": "图片编辑失败",
+    "selectModel": "选择模型",
+    "negativePrompt": "负面提示词",
+    "negativePromptPlaceholder": "描述不想出现的元素（可选）",
+    "imageSize": "图片尺寸",
     "aiGenerateDialog": {
       "title": "AI 生成图片",
       "description": "根据 PRD 内容生成相关的产品图片、UI 素材等",
       "prompt": "生成提示词",
       "promptPlaceholder": "描述你想要生成的图片...",
+      "promptHint": "详细描述你想要的图片内容，包括风格、色彩、构图等",
       "count": "生成数量",
       "generating": "生成中...",
       "generateSuccess": "图片生成成功",
       "generateFailed": "图片生成失败"
+    },
+    "editDialog": {
+      "title": "AI 编辑图片",
+      "description": "使用自然语言描述修改图片",
+      "prompt": "编辑指令",
+      "promptPlaceholder": "描述你想要的修改...",
+      "function": "编辑类型",
+      "functionDescription": "指令编辑",
+      "functionStylizationAll": "全局风格化",
+      "functionStylizationLocal": "局部风格化",
+      "functionDescriptionEditWithMask": "蒙版编辑",
+      "functionExpand": "图片扩展",
+      "functionSuperResolution": "超分辨率放大",
+      "functionColorization": "黑白上色",
+      "strength": "编辑强度",
+      "strengthHint": "数值越高修改越大",
+      "generating": "编辑中...",
+      "editSuccess": "图片编辑成功",
+      "editFailed": "图片编辑失败"
+    },
+    "functions": {
+      "stylization_all": "全局风格化",
+      "stylization_local": "局部风格化",
+      "description_edit": "指令编辑",
+      "description_edit_with_mask": "蒙版编辑",
+      "expand": "图片扩展",
+      "super_resolution": "超分辨率",
+      "colorization": "黑白上色"
     }
   },
   "workspace": {
@@ -695,6 +731,7 @@
     "archMind": "ArchMind"
   },
   "errors": {
+    "unauthorized": "未授权，请先登录",
     "workspaceNotFound": "工作区未找到",
     "workspaceNameExists": "工作区名称已存在",
     "cannotDeleteDefault": "无法删除默认工作区",
@@ -773,6 +810,12 @@
     "assetUploadedSuccess": "资源上传成功",
     "assetDeletedSuccess": "资源已成功删除",
     "aiImageGenerationNotImplemented": "AI 图片生成功能尚未实现",
+    "imageApiKeyNotConfigured": "图片生成 API Key 未配置，请在环境变量中设置 DASHSCOPE_API_KEY",
+    "imageModelNotAvailable": "图片生成模型 {model} 不可用",
+    "imageGenerationFailed": "图片生成失败",
+    "imageEditFailed": "图片编辑失败",
+    "imageDownloadFailed": "下载生成的图片失败",
+    "assetNotFound": "资源未找到",
     "apiRunning": "ArchMind API 正在运行",
     "databaseConnectionFailed": "数据库连接失败",
     "noAiModelsConfigured": "未配置 AI 模型，请在环境变量中设置 API 密钥。",

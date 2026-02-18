@@ -83,7 +83,7 @@ function changeLocale(newLocale: string) {
 // 监听路由变化，当离开 auth 页面时添加 leaving 类
 router.beforeEach((to, from, next) => {
   // 如果从 auth 页面离开到非 auth 页面
-  const authPages = ['/login', '/register']
+  const authPages = ['/login', '/register', '/forgot-password', '/reset-password']
   if (authPages.includes(from.path) && !authPages.includes(to.path)) {
     isLeaving.value = true
   }
@@ -92,7 +92,7 @@ router.beforeEach((to, from, next) => {
 
 router.afterEach((to) => {
   // 重置状态
-  const authPages = ['/login', '/register']
+  const authPages = ['/login', '/register', '/forgot-password', '/reset-password']
   if (authPages.includes(to.path)) {
     isLeaving.value = false
   }

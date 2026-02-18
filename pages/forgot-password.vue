@@ -59,12 +59,30 @@
             <img src="/logo.png" alt="ArchMind" class="logo-mini" />
             <span>ArchMind</span>
           </NuxtLink>
-          <h2 class="form-title">{{ $t('auth.login') }}</h2>
-          <p class="form-subtitle">{{ $t('auth.loginSubtitle') }}</p>
+          <h2 class="form-title">{{ $t('auth.forgotPassword') }}</h2>
+          <p class="form-subtitle">{{ $t('auth.forgotPasswordSubtitle') }}</p>
+        </div>
+
+        <!-- Success State -->
+        <div v-if="emailSent" class="success-state">
+          <div class="success-icon-wrapper">
+            <Mail class="success-icon" />
+          </div>
+          <h3 class="success-title">{{ $t('auth.emailSent') }}</h3>
+          <p class="success-description">
+            {{ $t('auth.emailSentDescription') }}
+          </p>
+          <p class="success-email">
+            {{ email }}
+          </p>
+          <NuxtLink to="/login" class="back-to-login">
+            <ArrowLeft class="w-4 h-4" />
+            {{ $t('auth.backToLogin') }}
+          </NuxtLink>
         </div>
 
         <!-- Form -->
-        <form @submit="handleSubmit" class="auth-form">
+        <form v-else @submit="handleSubmit" class="auth-form">
           <!-- Error Alert -->
           <Transition name="shake">
             <div v-if="authStore.error" class="error-alert">
@@ -94,38 +112,6 @@
             </div>
           </div>
 
-          <!-- Password Field -->
-          <div class="input-group" :class="{ focused: focusedField === 'password', filled: password }">
-            <label for="password">{{ $t('auth.password') }}</label>
-            <div class="input-wrapper">
-              <Lock class="input-icon" />
-              <input
-                id="password"
-                v-model="password"
-                :type="showPassword ? 'text' : 'password'"
-                :placeholder="$t('auth.passwordPlaceholder')"
-                :disabled="authStore.loading"
-                required
-                @focus="focusedField = 'password'"
-                @blur="focusedField = ''"
-              />
-              <button
-                type="button"
-                class="password-toggle"
-                @click="showPassword = !showPassword"
-              >
-                <Eye v-if="showPassword" class="w-5 h-5" />
-                <EyeOff v-else class="w-5 h-5" />
-              </button>
-              <div class="input-border"></div>
-            </div>
-          </div>
-
-          <!-- Forgot Password Link -->
-          <div class="forgot-password-link">
-            <NuxtLink to="/forgot-password">{{ $t('auth.forgotPassword') }}?</NuxtLink>
-          </div>
-
           <!-- Submit Button -->
           <button
             type="submit"
@@ -135,20 +121,19 @@
           >
             <span class="btn-content">
               <Loader2 v-if="authStore.loading" class="btn-icon animate-spin" />
-              <ArrowRight v-else class="btn-icon" />
-              <span>{{ authStore.loading ? $t('auth.loggingIn') : $t('auth.login') }}</span>
+              <Send v-else class="btn-icon" />
+              <span>{{ authStore.loading ? $t('auth.sending') : $t('auth.sendResetEmail') }}</span>
             </span>
             <div class="btn-glow"></div>
           </button>
         </form>
 
         <!-- Footer -->
-        <div class="form-footer">
+        <div v-if="!emailSent" class="form-footer">
           <p>
-            {{ $t('auth.noAccount') }}
-            <NuxtLink to="/register" class="link-highlight">
-              {{ $t('auth.register') }}
-              <ArrowRight class="link-arrow" />
+            <NuxtLink to="/login" class="link-highlight">
+              <ArrowLeft class="link-arrow" />
+              {{ $t('auth.backToLogin') }}
             </NuxtLink>
           </p>
         </div>
@@ -159,7 +144,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Sparkles, Eye, EyeOff, Loader2, AlertCircle, Mail, Lock, ArrowRight, Zap, Shield, Layers } from 'lucide-vue-next'
+import { Mail, Loader2, AlertCircle, ArrowLeft, Send, Zap, Shield, Layers } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import ShinyText from '~/components/ui/bits/ShinyText.vue'
 
@@ -168,8 +153,6 @@ definePageMeta({
 })
 
 const { t } = useI18n()
-const router = useRouter()
-const route = useRoute()
 const authStore = useAuthStore()
 
 // Clear error on page load
@@ -179,23 +162,21 @@ onMounted(() => {
 
 // Form state
 const email = ref('')
-const password = ref('')
-const showPassword = ref(false)
 const focusedField = ref('')
+const emailSent = ref(false)
 
 // Submit handler
 const handleSubmit = async (e: Event) => {
   e.preventDefault()
 
-  if (!email.value || !password.value) {
+  if (!email.value) {
     return
   }
 
   authStore.clearError()
-  const success = await authStore.login(email.value, password.value)
-  if (success) {
-    const redirect = route.query.redirect as string || '/app'
-    router.push(redirect)
+  const result = await authStore.forgotPassword(email.value)
+  if (result.success) {
+    emailSent.value = true
   }
 }
 </script>
@@ -208,7 +189,7 @@ const handleSubmit = async (e: Event) => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
-  padding-top: 4rem; /* Account for nav bar */
+  padding-top: 4rem;
 }
 
 @media (max-width: 968px) {
@@ -238,7 +219,7 @@ const handleSubmit = async (e: Event) => {
   max-width: 400px;
 }
 
-/* Logo Animation - Monochrome */
+/* Logo Animation */
 .logo-container {
   position: relative;
   width: 120px;
@@ -326,7 +307,7 @@ const handleSubmit = async (e: Event) => {
   margin-top: 0.25rem;
 }
 
-/* Gradient Text Effects - Monochrome */
+/* Gradient Text Effects */
 .gradient-text {
   background: linear-gradient(
     135deg,
@@ -515,6 +496,71 @@ const handleSubmit = async (e: Event) => {
   letter-spacing: 0.01em;
 }
 
+/* ===== Success State ===== */
+.success-state {
+  text-align: center;
+  padding: 2rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.success-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  background: hsl(var(--primary) / 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success-icon {
+  width: 40px;
+  height: 40px;
+  color: hsl(var(--primary));
+}
+
+.success-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.75rem;
+}
+
+.success-description {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.success-email {
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  background: hsl(var(--accent));
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
+.back-to-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: hsl(var(--foreground));
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+.back-to-login:hover {
+  background: hsl(var(--accent));
+}
+
 /* ===== Form Styles ===== */
 .auth-form {
   display: flex;
@@ -655,44 +701,7 @@ const handleSubmit = async (e: Event) => {
   height: 2px;
 }
 
-/* Password Toggle */
-.password-toggle {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: hsl(var(--muted-foreground) / 0.5);
-  cursor: pointer;
-  padding: 0.25rem;
-  transition: all 0.3s ease;
-  border-radius: 6px;
-}
-
-.password-toggle:hover {
-  color: hsl(var(--muted-foreground));
-  background: hsl(var(--accent));
-}
-
-/* Forgot Password Link */
-.forgot-password-link {
-  text-align: right;
-  margin-top: -0.5rem;
-}
-
-.forgot-password-link a {
-  color: hsl(var(--muted-foreground));
-  text-decoration: none;
-  font-size: 0.8125rem;
-  transition: color 0.3s ease;
-}
-
-.forgot-password-link a:hover {
-  color: hsl(var(--foreground));
-}
-
-/* Submit Button - Monochrome */
+/* Submit Button */
 .submit-btn {
   position: relative;
   width: 100%;
@@ -773,8 +782,8 @@ const handleSubmit = async (e: Event) => {
 
 /* Form Footer */
 .form-footer {
-  margin-top: 2rem;
-  text-align: center;
+  margin-top: 1.5rem;
+  text-align: left;
   color: hsl(var(--muted-foreground));
   font-size: 0.875rem;
   position: relative;
@@ -805,7 +814,7 @@ const handleSubmit = async (e: Event) => {
 }
 
 .link-highlight:hover .link-arrow {
-  transform: translateX(4px);
+  transform: translateX(-4px);
 }
 
 /* Float Animation */

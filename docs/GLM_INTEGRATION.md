@@ -1,4 +1,4 @@
-# GLM (Zhipu AI ChatGLM) 集成指南
+# GLM (智谱 AI) 集成指南
 
 ## 概览
 
@@ -76,7 +76,7 @@ GET /api/ai/models
         "available": true,
         "info": {
           "modelId": "glm-4-flash",
-          "name": "ChatGLM",
+          "name": "GLM",
           "provider": "glm",
           "capabilities": {
             "supportsStreaming": true,

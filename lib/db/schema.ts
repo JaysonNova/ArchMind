@@ -35,12 +35,15 @@ export const users = pgTable('users', {
   fullName: varchar('full_name', { length: 100 }),
   avatarUrl: text('avatar_url'),
   isActive: boolean('is_active').default(true),
+  resetToken: varchar('reset_token', { length: 255 }),
+  resetTokenExpires: timestamp('reset_token_expires', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 }, (table) => {
   return {
     emailIdx: index('idx_users_email').on(table.email),
-    usernameIdx: index('idx_users_username').on(table.username)
+    usernameIdx: index('idx_users_username').on(table.username),
+    resetTokenIdx: index('idx_users_reset_token').on(table.resetToken)
   }
 })
 
