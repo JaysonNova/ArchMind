@@ -223,7 +223,7 @@
                   <div class="border border-border rounded-lg overflow-hidden bg-white" style="height: 480px;">
                     <iframe
                       :srcdoc="activePrototypeHtml"
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                      sandbox="allow-scripts allow-forms allow-popups"
                       class="w-full h-full border-0"
                     />
                   </div>
@@ -344,6 +344,57 @@
                 </CardContent>
               </Card>
 
+              <!-- RAG 知识库设置 -->
+              <Card>
+                <CardHeader class="pb-3">
+                  <CardTitle class="text-base flex items-center gap-2">
+                    <Brain class="w-4 h-4 text-violet-500" />
+                    {{ $t('projects.details.ragTitle') }}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div class="space-y-3">
+                    <p class="text-xs text-muted-foreground leading-relaxed">
+                      {{ $t('projects.details.ragDescription') }}
+                    </p>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <Switch
+                          :checked="ragEnabled"
+                          :disabled="ragLoading || ragStatus === 'processing'"
+                          @update:checked="handleRagToggle"
+                        />
+                        <span class="text-sm font-medium">
+                          {{ ragEnabled ? $t('projects.details.ragEnabled') : $t('projects.details.ragDisabled') }}
+                        </span>
+                      </div>
+                      <!-- 状态指示 -->
+                      <div v-if="ragStatus === 'processing'" class="flex items-center gap-1.5">
+                        <Loader2 class="w-3.5 h-3.5 animate-spin text-violet-500" />
+                        <span class="text-xs text-muted-foreground">{{ $t('projects.details.ragProcessing') }}</span>
+                      </div>
+                      <Badge
+                        v-else-if="ragEnabled && ragStatus === 'completed'"
+                        variant="outline"
+                        class="text-[10px] border-violet-300 text-violet-600 bg-violet-50"
+                      >
+                        {{ $t('projects.details.ragReady') }}
+                      </Badge>
+                      <Badge
+                        v-else-if="ragStatus === 'failed'"
+                        variant="outline"
+                        class="text-[10px] border-red-300 text-red-600"
+                      >
+                        {{ $t('projects.details.ragFailed') }}
+                      </Badge>
+                    </div>
+                    <p v-if="ragEnabled" class="text-[11px] text-violet-600/70 bg-violet-50 rounded-md px-2.5 py-1.5">
+                      {{ $t('projects.details.ragHint') }}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
               <!-- Referenced Documents -->
               <Card v-if="references.length > 0">
                 <CardHeader class="pb-3">
@@ -404,12 +455,13 @@ import { marked } from 'marked'
 import {
   ArrowLeft, MoreVertical, Download, Trash2, MessageSquarePlus,
   FileText, MessageCircle, Layout, BookOpen, Calendar, Info,
-  ChevronDown, User, Sparkles, Maximize2, Edit
+  ChevronDown, User, Sparkles, Maximize2, Edit, Brain, Loader2
 } from 'lucide-vue-next'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Badge } from '~/components/ui/badge'
 import { Separator } from '~/components/ui/separator'
+import { Switch } from '~/components/ui/switch'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -450,6 +502,11 @@ const deleteDialogOpen = ref(false)
 const prototypeData = ref<any>(null)
 const prototypePages = ref<any[]>([])
 const activePrototypePage = ref('')
+
+// RAG 状态
+const ragLoading = ref(false)
+const ragEnabled = computed(() => prd.value?.metadata?.ragEnabled === true)
+const ragStatus = computed(() => prd.value?.metadata?.ragStatus as string | undefined)
 
 // Number of messages to show in collapsed view
 const displayMessageCount = 6
@@ -523,7 +580,17 @@ const displayedMessages = computed(() => {
 
 const activePrototypeHtml = computed(() => {
   const page = prototypePages.value.find((p: any) => p.pageSlug === activePrototypePage.value)
-  return page?.htmlContent || ''
+  const html = page?.htmlContent || ''
+  if (!html) return ''
+
+  // 注入脚本过滤 Tailwind CDN 的生产环境警告
+  const suppressScript = `<script>(function(){var _w=console.warn;console.warn=function(){if(arguments[0]&&typeof arguments[0]==='string'&&arguments[0].indexOf('cdn.tailwindcss.com')!==-1)return;_w.apply(console,arguments)};})();<\/script>`
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${suppressScript}</head>`)
+  } else if (html.includes('<html')) {
+    return html.replace(/<html[^>]*>/, `$&${suppressScript}`)
+  }
+  return suppressScript + html
 })
 
 function formatDate (date: string | undefined) {
@@ -614,4 +681,73 @@ function handleEditPrd () {
     query: { loadPrd: prdId, immersive: '1' }
   })
 }
+
+async function handleRagToggle (enabled: boolean) {
+  if (ragLoading.value) return
+  ragLoading.value = true
+  try {
+    if (enabled) {
+      // 乐观更新 UI，立即显示 processing 状态
+      if (prd.value) {
+        prd.value = {
+          ...prd.value,
+          metadata: { ...(prd.value.metadata || {}), ragEnabled: false, ragStatus: 'processing' }
+        }
+      }
+      await $fetch(`/api/prd/${prdId}/vectorize`, { method: 'POST' })
+      // 服务端后台处理，轮询状态直到完成
+      pollRagStatus()
+      toast({ title: t('projects.details.ragEnableSuccess') })
+    } else {
+      await $fetch(`/api/prd/${prdId}/vectorize`, { method: 'DELETE' })
+      if (prd.value) {
+        prd.value = {
+          ...prd.value,
+          metadata: { ...(prd.value.metadata || {}), ragEnabled: false, ragStatus: undefined }
+        }
+      }
+      toast({ title: t('projects.details.ragDisableSuccess') })
+    }
+  } catch (error) {
+    console.error('[RAG] toggle failed:', error)
+    toast({
+      title: enabled ? t('projects.details.ragEnableFailed') : t('projects.details.ragDisableFailed'),
+      variant: 'destructive'
+    })
+    // 恢复原状态
+    if (prd.value) {
+      prd.value = {
+        ...prd.value,
+        metadata: { ...(prd.value.metadata || {}), ragStatus: enabled ? 'failed' : undefined }
+      }
+    }
+  } finally {
+    ragLoading.value = false
+  }
+}
+
+// 轮询 RAG 状态，直到 completed 或 failed
+let ragPollTimer: ReturnType<typeof setTimeout> | null = null
+function pollRagStatus () {
+  if (ragPollTimer) clearTimeout(ragPollTimer)
+  ragPollTimer = setTimeout(async () => {
+    try {
+      const res = await $fetch<{ data: any }>(`/api/prd/${prdId}`)
+      if (res.data) {
+        prd.value = res.data
+      }
+      const status = res.data?.metadata?.ragStatus
+      if (status === 'processing') {
+        // 继续轮询
+        pollRagStatus()
+      }
+    } catch {
+      // 忽略轮询错误
+    }
+  }, 3000)
+}
+
+onUnmounted(() => {
+  if (ragPollTimer) clearTimeout(ragPollTimer)
+})
 </script>

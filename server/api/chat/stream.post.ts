@@ -15,6 +15,8 @@ interface ChatStreamRequest {
   maxTokens?: number
   target?: ConversationTargetType
   targetContext?: ConversationTargetContext
+  documentIds?: string[]
+  prdIds?: string[]
 }
 
 export default defineEventHandler(async (event) => {
@@ -58,9 +60,9 @@ export default defineEventHandler(async (event) => {
       return
     }
 
-    // 初始化 Embedding（如果需要 RAG）
+    // 初始化 Embedding（如果需要 RAG 或有 @ 提及文档/PRD）
     let embeddingAdapter = null
-    if (body.useRAG) {
+    if (body.useRAG || (body.documentIds && body.documentIds.length > 0) || (body.prdIds && body.prdIds.length > 0)) {
       try {
         const configPath = join(process.cwd(), 'config', 'ai-models.yaml')
         const content = readFileSync(configPath, 'utf-8')
@@ -81,7 +83,9 @@ export default defineEventHandler(async (event) => {
     // 创建对话引擎
     const engine = new ChatEngine(embeddingAdapter || undefined, config, {
       target: body.target || 'prd',
-      targetContext: body.targetContext
+      targetContext: body.targetContext,
+      documentIds: body.documentIds,
+      prdIds: body.prdIds
     })
 
     // 流式生成
@@ -89,7 +93,9 @@ export default defineEventHandler(async (event) => {
       modelId,
       temperature: body.temperature,
       maxTokens: body.maxTokens,
-      useRAG: body.useRAG === true && embeddingAdapter !== null
+      useRAG: body.useRAG === true && embeddingAdapter !== null,
+      documentIds: body.documentIds,
+      prdIds: body.prdIds
     })
 
     let fullContent = ''

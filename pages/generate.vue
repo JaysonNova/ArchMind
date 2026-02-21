@@ -1,4 +1,5 @@
 <template>
+  <div>
   <NuxtLayout :name="layoutName">
   <div class="generate-page flex flex-col" :style="{ height: isImmersive ? '100vh' : 'calc(100vh - 86px)' }">
     <div class="max-w-[1800px] mx-auto px-6 pb-4 flex-1 flex flex-col min-h-0 w-full" :class="isImmersive ? 'pt-4' : 'pt-2'">
@@ -65,6 +66,7 @@
           <MessageInput
             :is-loading="isGenerating"
             :available-models="availableModels"
+            :workspace-id="workspace.currentWorkspaceId.value ?? undefined"
             @send="handleSendMessage"
           />
         </Card>
@@ -235,6 +237,7 @@
     </Dialog>
   </div>
   </NuxtLayout>
+  </div>
 </template>
 
 <style>
@@ -276,11 +279,13 @@ import {
 import { Checkbox } from '~/components/ui/checkbox'
 import { useToast } from '~/components/ui/toast/use-toast'
 import LanguageSwitcher from '~/components/common/LanguageSwitcher.vue'
+import { useWorkspace } from '~/composables/useWorkspace'
 import type { ConversationTargetType, ConversationMessage } from '~/types/conversation'
 
 const { t } = useI18n()
 const { toast } = useToast()
 const route = useRoute()
+const workspace = useWorkspace()
 
 const isImmersive = computed(() => route.query.immersive === '1')
 const layoutName = computed(() => isImmersive.value ? 'chat' : 'dashboard')
@@ -379,7 +384,7 @@ const conversationRef = conversation.conversation
 
 async function handleSendMessage (
   message: string,
-  options: { modelId: string; useRAG: boolean; target: ConversationTargetType }
+  options: { modelId: string; useRAG: boolean; target: ConversationTargetType; documentIds: string[]; prdIds: string[] }
 ) {
   // 切换对话目标（如果改变了）
   if (options.target !== conversation.currentTarget.value) {
@@ -389,7 +394,8 @@ async function handleSendMessage (
   // Add user message
   conversation.addUserMessage(message, {
     modelUsed: options.modelId,
-    useRAG: options.useRAG
+    useRAG: options.useRAG,
+    documentIds: options.documentIds?.length > 0 ? options.documentIds : undefined
   })
 
   lastUsedModelId.value = options.modelId
@@ -422,6 +428,8 @@ async function handleSendMessage (
         modelId: options.modelId,
         useRAG: options.useRAG,
         target: options.target,
+        documentIds: options.documentIds?.length > 0 ? options.documentIds : undefined,
+        prdIds: options.prdIds?.length > 0 ? options.prdIds : undefined,
         // 原型目标时传递当前 HTML 上下文
         targetContext: options.target === 'prototype' ? {
           prototypeHtml: conversation.targetContext.value?.prototypeHtml
@@ -645,7 +653,9 @@ async function handleRetry (message: ConversationMessage) {
   await handleSendMessage(message.content, {
     modelId,
     useRAG: message.useRAG ?? true,
-    target: conversation.currentTarget.value
+    target: conversation.currentTarget.value,
+    documentIds: message.documentIds || [],
+    prdIds: []
   })
 }
 

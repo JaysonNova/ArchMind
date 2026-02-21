@@ -17,11 +17,15 @@ export interface ChatStreamOptions {
   maxTokens?: number
   useRAG?: boolean
   topK?: number
+  documentIds?: string[]
+  prdIds?: string[]
 }
 
 export interface ChatEngineOptions {
   target?: ConversationTargetType
   targetContext?: ConversationTargetContext
+  documentIds?: string[]
+  prdIds?: string[]
 }
 
 const MAX_HISTORY_MESSAGES = 20
@@ -31,6 +35,8 @@ export class ChatEngine {
   private ragRetriever: RAGRetriever | null = null
   private target: ConversationTargetType
   private targetContext?: ConversationTargetContext
+  private documentIds?: string[]
+  private prdIds?: string[]
 
   constructor (embeddingAdapter?: IEmbeddingAdapter, aiConfig?: Record<string, any>, options?: ChatEngineOptions) {
     this.modelManager = new ModelManager(aiConfig)
@@ -39,6 +45,8 @@ export class ChatEngine {
     }
     this.target = options?.target || 'prd'
     this.targetContext = options?.targetContext
+    this.documentIds = options?.documentIds
+    this.prdIds = options?.prdIds
   }
 
   /**
@@ -118,12 +126,34 @@ ${this.targetContext.prototypeHtml}
       throw new Error(`Model ${modelId} not available`)
     }
 
-    // RAG 检索
+    // RAG 检索：若有 @ 提及文档或 PRD，即使 useRAG=false 也检索指定内容
     let backgroundContext = ''
-    if (useRAG && this.ragRetriever) {
-      const retrievedChunks = await this.ragRetriever.retrieve(currentMessage, { topK, threshold: 0.3 })
-      if (retrievedChunks.length > 0) {
-        backgroundContext = this.ragRetriever.summarizeResults(retrievedChunks)
+    const effectiveDocumentIds = options?.documentIds ?? this.documentIds
+    const effectivePrdIds = options?.prdIds ?? this.prdIds
+    const hasDocumentMentions = effectiveDocumentIds && effectiveDocumentIds.length > 0
+    const hasPrdMentions = effectivePrdIds && effectivePrdIds.length > 0
+
+    if ((useRAG || hasDocumentMentions || hasPrdMentions) && this.ragRetriever) {
+      if (hasPrdMentions) {
+        // PRD 检索
+        const retrievedChunks = await this.ragRetriever.retrieve(currentMessage, {
+          topK,
+          threshold: 0.1,
+          prdIds: effectivePrdIds
+        })
+        if (retrievedChunks.length > 0) {
+          backgroundContext = this.ragRetriever.summarizeResults(retrievedChunks)
+        }
+      } else {
+        // 文档检索
+        const retrievedChunks = await this.ragRetriever.retrieve(currentMessage, {
+          topK,
+          threshold: hasDocumentMentions ? 0.1 : 0.3,
+          documentIds: hasDocumentMentions ? effectiveDocumentIds : undefined
+        })
+        if (retrievedChunks.length > 0) {
+          backgroundContext = this.ragRetriever.summarizeResults(retrievedChunks)
+        }
       }
     }
 

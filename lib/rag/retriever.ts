@@ -7,12 +7,16 @@
 import type { IEmbeddingAdapter } from './embedding-adapter'
 import { VectorDAO } from '~/lib/db/dao/vector-dao'
 import { DocumentChunkDAO } from '~/lib/db/dao/document-chunk-dao'
+import { PrdChunkDAO } from '~/lib/db/dao/prd-chunk-dao'
 import { DocumentDAO } from '~/lib/db/dao/document-dao'
+import { PRDDAO } from '~/lib/db/dao/prd-dao'
 import { dbClient } from '~/lib/db/client'
 
 export interface RetrievalOptions {
   topK?: number;
   threshold?: number;
+  documentIds?: string[];
+  prdIds?: string[];
 }
 
 export interface RetrievedChunk {
@@ -40,38 +44,55 @@ export class RAGRetriever {
   async retrieve (query: string, options?: RetrievalOptions): Promise<RetrievedChunk[]> {
     const topK = options?.topK ?? this.topK
     const threshold = options?.threshold ?? this.threshold
+    const documentIds = options?.documentIds
+    const prdIds = options?.prdIds
 
     try {
       // 获取查询的向量表示
       const queryEmbedding = await this.embeddingAdapter.embed(query)
 
-      // 执行向量相似度搜索
-      const results = await VectorDAO.similaritySearch(queryEmbedding, topK, threshold)
+      // 执行向量相似度搜索（可按 documentIds / prdIds 过滤范围）
+      const results = await VectorDAO.similaritySearch(queryEmbedding, topK, threshold, undefined, documentIds, prdIds)
 
       if (results.length === 0) {
         return []
       }
 
-      // 获取详细的块信息
-      const chunkIds = results.map(r => r.chunkId)
-      const chunks = await DocumentChunkDAO.findByIds(chunkIds)
-
-      // 创建块 ID 到相似度的映射
       const similarityMap = new Map(results.map(r => [r.chunkId, r.score]))
-
-      // 获取文档信息并组合结果
       const retrievedChunks: RetrievedChunk[] = []
 
-      for (const chunk of chunks) {
-        const doc = await DocumentDAO.findById(chunk.documentId)
-        if (doc) {
-          retrievedChunks.push({
-            id: chunk.id,
-            documentId: chunk.documentId,
-            documentTitle: doc.title,
-            content: chunk.content,
-            similarity: similarityMap.get(chunk.id) || 0
-          })
+      if (prdIds && prdIds.length > 0 && (!documentIds || documentIds.length === 0)) {
+        // PRD 检索路径
+        const chunkIds = results.map(r => r.chunkId)
+        const chunks = await PrdChunkDAO.findByIds(chunkIds)
+        for (const chunk of chunks) {
+          const prd = await PRDDAO.findById(chunk.prdId)
+          if (prd) {
+            retrievedChunks.push({
+              id: chunk.id,
+              documentId: chunk.prdId,
+              documentTitle: `[PRD] ${prd.title}`,
+              content: chunk.content,
+              similarity: similarityMap.get(chunk.id) || 0
+            })
+          }
+        }
+      } else {
+        // 文档检索路径
+        const chunkIds = results.map(r => r.chunkId)
+        const chunks = await DocumentChunkDAO.findByIds(chunkIds)
+
+        for (const chunk of chunks) {
+          const doc = await DocumentDAO.findById(chunk.documentId)
+          if (doc) {
+            retrievedChunks.push({
+              id: chunk.id,
+              documentId: chunk.documentId,
+              documentTitle: doc.title,
+              content: chunk.content,
+              similarity: similarityMap.get(chunk.id) || 0
+            })
+          }
         }
       }
 

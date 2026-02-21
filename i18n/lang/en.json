@@ -292,6 +292,18 @@
       "editPlaceholder": "Edit PRD content here (Markdown supported)...",
       "editHint": "Supports Markdown syntax, HTML preview will auto-update after saving",
       "saveSuccessDescription": "PRD content has been updated successfully",
+      "ragTitle": "AI Knowledge Base",
+      "ragDescription": "When enabled, you can mention this PRD with {'@'} in chat, and AI will search and answer based on PRD content.",
+      "ragEnabled": "Enabled",
+      "ragDisabled": "Disabled",
+      "ragProcessing": "Indexing...",
+      "ragReady": "Ready",
+      "ragFailed": "Index Failed",
+      "ragHint": "Type {'@'} in the chat to reference this PRD",
+      "ragEnableSuccess": "PRD indexing started, please wait",
+      "ragDisableSuccess": "RAG index disabled",
+      "ragEnableFailed": "Failed to enable RAG, please try again",
+      "ragDisableFailed": "Failed to disable RAG, please try again",
       "actions": {
         "edit": "Edit",
         "exportMarkdown": "Export Markdown",
@@ -487,7 +499,12 @@
     "back": "Back",
     "backHint": "Delete this and subsequent messages",
     "edit": "Edit",
-    "editHint": "Edit this message"
+    "editHint": "Edit this message",
+    "mentionSearchPlaceholder": "Search documents...",
+    "mentionNoDocuments": "No documents found",
+    "mentionNavigate": "Navigate",
+    "mentionSelect": "Select",
+    "mentionClose": "Close"
   },
   "knowledgeBase": {
     "title": "Knowledge Base",

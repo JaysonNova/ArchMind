@@ -110,21 +110,18 @@ check_obs_config() {
 create_docker_files() {
     log_info "创建 Docker 配置文件..."
 
-    mkdir -p docker
+    mkdir -p docker docker/ssl
 
-    # 创建数据库初始化脚本
-    cat > docker/init-db.sql << 'EOF'
--- 启用 pgvector 扩展
-CREATE EXTENSION IF NOT EXISTS vector;
-
--- 创建全文搜索配置（中文支持）
-CREATE TEXT SEARCH CONFIGURATION IF NOT EXISTS chinese_zh (COPY = simple);
-
--- 授权
-GRANT ALL PRIVILEGES ON DATABASE archmind TO archmind;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO archmind;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO archmind;
-EOF
+    # 如果 init-db.sql 已存在，跳过（保留版本控制中的完整 schema）
+    if [ ! -f "docker/init-db.sql" ]; then
+        log_warn "docker/init-db.sql 不存在，创建基础版本（建议使用版本库中的完整版）"
+        cat > docker/init-db.sql << 'SQLEOF'
+-- 启用扩展
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "vector";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+SQLEOF
+    fi
 
     # 创建 Nginx 配置（可选）
     cat > docker/nginx.conf << 'EOF'

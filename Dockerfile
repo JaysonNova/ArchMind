@@ -6,16 +6,19 @@
 # ================================
 FROM node:20-alpine AS deps
 
-# 安装 pnpm
+# 安装 pnpm 及原生模块编译工具
 RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
 # 复制依赖文件
 COPY package.json pnpm-lock.yaml ./
 
-# 安装生产依赖
-RUN pnpm install --frozen-lockfile --prod
+# 安装全部依赖（包含 dev，以便原生模块能正确编译）
+# 之后用 --prod 过滤只保留生产依赖
+RUN pnpm install --frozen-lockfile
+RUN pnpm prune --prod
 
 # ================================
 # Stage 2: 构建

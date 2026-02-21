@@ -171,17 +171,78 @@ export class VectorDAO {
   }
 
   /**
-   * 向量相似度搜索(支持指定模型)
+   * 向量相似度搜索(支持指定模型、文档范围和 PRD 范围过滤)
    */
   static async similaritySearch(
     queryEmbedding: number[],
     limit: number = 5,
     threshold: number = 0.7,
-    modelName?: string
+    modelName?: string,
+    documentIds?: string[],
+    prdIds?: string[]
   ): Promise<Array<{ chunkId: string; score: number; content: string; documentId: string }>> {
     // 如果没有指定模型,使用默认模型
     const model = modelName ? await this.getModelByName(modelName) : await this.getDefaultModel()
     const vtype = vecType(model.dimensions)
+
+    const hasPrdIds = prdIds && prdIds.length > 0
+    const hasDocumentIds = documentIds && documentIds.length > 0
+
+    // 仅查询 PRD chunks：使用 prd_chunks 表
+    if (hasPrdIds && !hasDocumentIds) {
+      const params: (string | number)[] = [
+        JSON.stringify(queryEmbedding),
+        model.name,
+        threshold,
+        limit
+      ]
+      const prdPlaceholders = prdIds.map((_, i) => `$${i + 5}`).join(', ')
+      params.push(...prdIds)
+
+      const sql = `
+        SELECT
+          e.chunk_id,
+          1 - ((e.embedding::${vtype}(${model.dimensions})) <=> $1::${vtype}(${model.dimensions})) as similarity,
+          c.content,
+          c.prd_id as document_id
+        FROM document_embeddings e
+        JOIN prd_chunks c ON e.chunk_id = c.id
+        WHERE e.model_name = $2
+          AND (1 - ((e.embedding::${vtype}(${model.dimensions})) <=> $1::${vtype}(${model.dimensions}))) >= $3
+          AND c.prd_id IN (${prdPlaceholders})
+        ORDER BY similarity DESC
+        LIMIT $4
+      `
+
+      const result = await dbClient.query<{
+        chunk_id: string
+        similarity: number
+        content: string
+        document_id: string
+      }>(sql, params)
+
+      return result.rows.map(row => ({
+        chunkId: row.chunk_id,
+        score: row.similarity,
+        content: row.content,
+        documentId: row.document_id
+      }))
+    }
+
+    // 构建 documentIds 过滤子句（document_chunks 表）
+    const params: (string | number)[] = [
+      JSON.stringify(queryEmbedding),
+      model.name,
+      threshold,
+      limit
+    ]
+
+    let documentFilter = ''
+    if (hasDocumentIds) {
+      const placeholders = documentIds.map((_, i) => `$${i + 5}`).join(', ')
+      documentFilter = `AND c.document_id IN (${placeholders})`
+      params.push(...documentIds)
+    }
 
     // 使用类型转换和部分索引
     const sql = `
@@ -194,6 +255,7 @@ export class VectorDAO {
       JOIN document_chunks c ON e.chunk_id = c.id
       WHERE e.model_name = $2
         AND (1 - ((e.embedding::${vtype}(${model.dimensions})) <=> $1::${vtype}(${model.dimensions}))) >= $3
+        ${documentFilter}
       ORDER BY similarity DESC
       LIMIT $4
     `
@@ -203,12 +265,7 @@ export class VectorDAO {
       similarity: number
       content: string
       document_id: string
-    }>(sql, [
-      JSON.stringify(queryEmbedding),
-      model.name,
-      threshold,
-      limit
-    ])
+    }>(sql, params)
 
     return result.rows.map(row => ({
       chunkId: row.chunk_id,

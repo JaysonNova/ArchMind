@@ -6,6 +6,17 @@
       class="relative rounded-xl bg-muted shadow-sm transition-all"
       :style="{ height: `${containerHeight}px` }"
     >
+      <!-- @ 文档提及下拉菜单 -->
+      <DocumentMentionDropdown
+        ref="dropdownRef"
+        :open="mentionActive"
+        :query="mentionQuery"
+        :workspace-id="currentWorkspaceId"
+        class="absolute bottom-full left-4"
+        @select="onSelectDocument"
+        @close="closeMentionDropdown"
+      />
+
       <!-- Resize Handle -->
       <div
         class="resize-handle absolute top-0 left-0 right-0 h-4 cursor-ns-resize flex items-center justify-center group select-none"
@@ -21,16 +32,46 @@
         v-model="input"
         :placeholder="$t('chat.inputPlaceholder')"
         :disabled="isLoading"
-        class="w-full h-full resize-none border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 pt-3 pb-12 px-4 bg-transparent"
+        class="w-full h-full resize-none border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 pt-3 bg-transparent"
+        :class="mentionedDocs.length > 0 ? 'pb-20' : 'pb-12'"
         @keydown="handleKeydown"
         @compositionstart="isComposing = true"
         @compositionend="isComposing = false"
+        style="padding-left: 1rem; padding-right: 1rem;"
       />
+
+      <!-- 已选文档 Badge 行（输入框内，底部控制栏上方） -->
+      <div
+        v-if="mentionedDocs.length > 0"
+        class="absolute left-0 right-0 px-3 flex items-center gap-1 flex-wrap"
+        style="bottom: 44px;"
+      >
+        <div
+          v-for="doc in mentionedDocs"
+          :key="doc.id"
+          class="inline-flex items-center gap-1 h-6 rounded-md px-1.5 text-xs border cursor-default select-none"
+          :class="doc.sourceType === 'prd'
+            ? 'bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-950/30 dark:border-violet-800 dark:text-violet-300'
+            : 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-300'"
+          :title="doc.title"
+        >
+          <ScrollText v-if="doc.sourceType === 'prd'" class="w-3 h-3 flex-shrink-0" />
+          <FileText v-else class="w-3 h-3 flex-shrink-0" />
+          <span class="max-w-[120px] truncate font-medium">{{ doc.title }}</span>
+          <button
+            class="ml-0.5 rounded-full p-0.5 opacity-60 hover:opacity-100 transition-opacity"
+            :class="doc.sourceType === 'prd' ? 'hover:bg-violet-200 dark:hover:bg-violet-800' : 'hover:bg-blue-200 dark:hover:bg-blue-800'"
+            @click="removeMentionedDoc(doc.id)"
+          >
+            <X class="w-2.5 h-2.5" />
+          </button>
+        </div>
+      </div>
 
       <!-- Bottom Controls Bar -->
       <div ref="bottomBarRef" class="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-center justify-between bg-transparent rounded-b-lg">
         <!-- Left Controls -->
-        <div ref="leftControlsRef" class="flex items-center gap-2 shrink-0">
+        <div ref="leftControlsRef" class="flex items-center gap-2 shrink-0 flex-wrap">
           <!-- Target Selector -->
           <TargetSelector
             v-model="selectedTarget"
@@ -94,20 +135,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { BookOpen, Send, Loader2 } from 'lucide-vue-next'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { BookOpen, Send, Loader2, X, FileText, ScrollText } from 'lucide-vue-next'
 import TargetSelector from './TargetSelector.vue'
-import type { ConversationTargetType } from '~/types/conversation'
+import DocumentMentionDropdown from './DocumentMentionDropdown.vue'
+import type { ConversationTargetType, MentionedDocument } from '~/types/conversation'
 
 const { locale } = useI18n()
 
 const emit = defineEmits<{
-  send: [message: string, options: { modelId: string; useRAG: boolean; target: ConversationTargetType }]
+  send: [message: string, options: { modelId: string; useRAG: boolean; target: ConversationTargetType; documentIds: string[]; prdIds: string[] }]
 }>()
 
 const props = defineProps<{
   isLoading?: boolean
   availableModels: Array<{ id: string; label: string }>
+  workspaceId?: string
 }>()
 
 const RAG_STORAGE_KEY = 'archmind-use-rag'
@@ -123,7 +166,7 @@ const selectedTarget = ref<ConversationTargetType>('prd')
 const useRAG = ref(false)
 const isComposing = ref(false)
 const containerRef = ref<HTMLDivElement>()
-const textareaRef = ref<HTMLTextAreaElement>()
+const textareaRef = ref()
 const bottomBarRef = ref<HTMLDivElement>()
 const leftControlsRef = ref<HTMLDivElement>()
 const hintRef = ref<HTMLSpanElement>()
@@ -134,6 +177,22 @@ const startHeight = ref(0)
 const showHint = ref(false)
 let resizeObserver: ResizeObserver | null = null
 let hintNaturalWidth = 0
+
+// @ 提及相关状态
+const mentionActive = ref(false)
+const mentionQuery = ref('')
+const mentionedDocs = ref<MentionedDocument[]>([])
+const mentionStartIndex = ref(-1)
+const dropdownRef = ref<InstanceType<typeof DocumentMentionDropdown>>()
+
+// 工作区 ID：优先使用 prop，其次从 localStorage 获取
+const currentWorkspaceId = computed(() => {
+  if (props.workspaceId) return props.workspaceId
+  if (process.client) {
+    return localStorage.getItem('current-workspace-id') || undefined
+  }
+  return undefined
+})
 
 // 检测底部栏是否有足够空间显示 tips
 function checkHintVisibility() {
@@ -217,6 +276,95 @@ watch(
   }
 )
 
+// 监听 input 变化，检测 @ 触发
+watch(input, async () => {
+  await nextTick()
+  detectMentionTrigger()
+})
+
+/**
+ * 检测光标前是否有 @ 触发
+ */
+function detectMentionTrigger() {
+  // 通过 $el 访问原生 textarea 元素
+  const textarea = textareaRef.value?.$el as HTMLTextAreaElement | undefined
+  if (!textarea) return
+
+  const cursorPos = textarea.selectionStart ?? input.value.length
+  const textBeforeCursor = input.value.substring(0, cursorPos)
+
+  // 从光标位置向前查找最近的 @
+  const atIndex = textBeforeCursor.lastIndexOf('@')
+
+  if (atIndex === -1) {
+    if (mentionActive.value) closeMentionDropdown()
+    return
+  }
+
+  // @ 前面必须是行首或空白字符（避免 email 地址误触发）
+  const charBeforeAt = atIndex > 0 ? textBeforeCursor[atIndex - 1] : ' '
+  if (charBeforeAt !== ' ' && charBeforeAt !== '\n' && atIndex !== 0) {
+    if (mentionActive.value) closeMentionDropdown()
+    return
+  }
+
+  // 提取 @ 后面的搜索词（只取不含空格的部分）
+  const queryText = textBeforeCursor.substring(atIndex + 1)
+  if (queryText.includes(' ') || queryText.includes('\n')) {
+    // @ 后面已有空格，说明引用已完成，关闭菜单
+    if (mentionActive.value) closeMentionDropdown()
+    return
+  }
+
+  mentionStartIndex.value = atIndex
+  mentionQuery.value = queryText
+  mentionActive.value = true
+}
+
+
+/**
+ * 用户选择文档后的处理
+ */
+function onSelectDocument(doc: MentionedDocument) {
+  // 检查是否已经选择过
+  if (!mentionedDocs.value.find(d => d.id === doc.id)) {
+    mentionedDocs.value.push(doc)
+  }
+
+  // 从 input 中移除 @query 文本（只保留 @ 前后的内容）
+  const before = input.value.substring(0, mentionStartIndex.value)
+  const afterQuery = input.value.substring(mentionStartIndex.value + 1 + mentionQuery.value.length)
+  // 去掉末尾多余的空格
+  input.value = before + afterQuery.replace(/^\s*/, '')
+
+  closeMentionDropdown()
+
+  // 聚焦并将光标移到删除位置
+  nextTick(() => {
+    const textarea = textareaRef.value?.$el as HTMLTextAreaElement | undefined
+    if (textarea) {
+      textarea.focus()
+      textarea.setSelectionRange(before.length, before.length)
+    }
+  })
+}
+
+/**
+ * 移除已选文档 Badge
+ */
+function removeMentionedDoc(docId: string) {
+  mentionedDocs.value = mentionedDocs.value.filter(d => d.id !== docId)
+}
+
+/**
+ * 关闭 @ 提及下拉菜单
+ */
+function closeMentionDropdown() {
+  mentionActive.value = false
+  mentionQuery.value = ''
+  mentionStartIndex.value = -1
+}
+
 function startResize(event: MouseEvent) {
   isResizing.value = true
   startY.value = event.clientY
@@ -261,6 +409,29 @@ onUnmounted(() => {
 })
 
 function handleKeydown (event: KeyboardEvent) {
+  // 当 @ 下拉菜单打开时，拦截导航和选择键
+  if (mentionActive.value) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      dropdownRef.value?.navigateDown()
+      return
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      dropdownRef.value?.navigateUp()
+      return
+    }
+    if (event.key === 'Enter' && !event.shiftKey && !isComposing.value) {
+      event.preventDefault()
+      dropdownRef.value?.confirmSelection()
+      return
+    }
+    if (event.key === 'Escape') {
+      closeMentionDropdown()
+      return
+    }
+  }
+
   // Enter without Shift sends the message (but not during IME composition)
   if (event.key === 'Enter' && !event.shiftKey && !isComposing.value) {
     event.preventDefault()
@@ -271,12 +442,17 @@ function handleKeydown (event: KeyboardEvent) {
 
 function handleSubmit () {
   if (!input.value.trim() || props.isLoading) return
+  const documentIds = mentionedDocs.value.filter(d => d.sourceType === 'document').map(d => d.id)
+  const prdIds = mentionedDocs.value.filter(d => d.sourceType === 'prd').map(d => d.id)
   emit('send', input.value, {
     modelId: selectedModel.value,
     useRAG: useRAG.value,
-    target: selectedTarget.value
+    target: selectedTarget.value,
+    documentIds,
+    prdIds
   })
   input.value = ''
+  mentionedDocs.value = []
 }
 </script>
 

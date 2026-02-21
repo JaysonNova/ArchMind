@@ -292,6 +292,18 @@
       "editPlaceholder": "在此编辑 PRD 内容（支持 Markdown 格式）...",
       "editHint": "支持 Markdown 语法，保存后将自动更新渲染的 HTML 预览",
       "saveSuccessDescription": "PRD 内容已成功更新",
+      "ragTitle": "AI 知识库",
+      "ragDescription": "启用后，可在对话中通过 {'@'} 提及此 PRD，AI 将基于 PRD 内容进行精准检索和回答。",
+      "ragEnabled": "已启用",
+      "ragDisabled": "未启用",
+      "ragProcessing": "索引中...",
+      "ragReady": "已就绪",
+      "ragFailed": "索引失败",
+      "ragHint": "在对话框中输入 {'@'} 即可引用此 PRD",
+      "ragEnableSuccess": "PRD 索引已启动，请稍候",
+      "ragDisableSuccess": "已关闭 RAG 索引",
+      "ragEnableFailed": "启用 RAG 失败，请重试",
+      "ragDisableFailed": "关闭 RAG 失败，请重试",
       "actions": {
         "edit": "编辑",
         "exportMarkdown": "导出 Markdown",
@@ -487,7 +499,12 @@
     "back": "回退",
     "backHint": "删除此消息及后续消息",
     "edit": "编辑",
-    "editHint": "编辑此消息"
+    "editHint": "编辑此消息",
+    "mentionSearchPlaceholder": "搜索文档...",
+    "mentionNoDocuments": "未找到相关文档",
+    "mentionNavigate": "导航",
+    "mentionSelect": "选择",
+    "mentionClose": "关闭"
   },
   "knowledgeBase": {
     "title": "知识库",

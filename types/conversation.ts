@@ -85,3 +85,11 @@ export interface ConversationSaveResponse {
   id: string
   message: string
 }
+
+// @ 提及的文档
+export interface MentionedDocument {
+  id: string
+  title: string
+  fileType: 'pdf' | 'docx' | 'markdown' | 'prd'
+  sourceType: 'document' | 'prd'
+}

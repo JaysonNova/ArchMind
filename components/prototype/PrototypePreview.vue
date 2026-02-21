@@ -33,7 +33,7 @@
         v-else
         ref="iframeRef"
         :srcdoc="disableInteractionHtml"
-        sandbox="allow-same-origin allow-scripts"
+        sandbox="allow-scripts"
         :style="iframeStyle"
         class="border border-border rounded-lg shadow-sm bg-white transition-all duration-300"
       />
@@ -75,7 +75,17 @@ const iframeStyle = computed(() => {
 const disableInteractionHtml = computed(() => {
   if (!props.html) return ''
 
-  const disableStyles = `
+  const injectedHead = `
+    <script>
+      // 过滤 Tailwind CDN 的生产环境警告
+      (function() {
+        var _warn = console.warn;
+        console.warn = function() {
+          if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].indexOf('cdn.tailwindcss.com') !== -1) return;
+          _warn.apply(console, arguments);
+        };
+      })();
+    <\/script>
     <style>
       /* 禁用所有交互，原型仅用于视觉预览 */
       *, *::before, *::after {
@@ -92,11 +102,11 @@ const disableInteractionHtml = computed(() => {
 
   // 在 </head> 或 <html> 后注入样式
   if (props.html.includes('</head>')) {
-    return props.html.replace('</head>', `${disableStyles}</head>`)
+    return props.html.replace('</head>', `${injectedHead}</head>`)
   } else if (props.html.includes('<html')) {
-    return props.html.replace(/<html[^>]*>/, `$&${disableStyles}`)
+    return props.html.replace(/<html[^>]*>/, `$&${injectedHead}`)
   } else {
-    return disableStyles + props.html
+    return injectedHead + props.html
   }
 })
 </script>
