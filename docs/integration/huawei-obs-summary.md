@@ -18,12 +18,6 @@
 
 ### 2. 存储后端实现
 
-**MinIO 适配器** (`lib/storage/adapters/minio-adapter.ts`)
-- 本地开发环境使用
-- 基于 minio npm 包
-- 支持所有 StorageAdapter 接口方法
-- 配置简单,Docker 一键启动
-
 **华为云 OBS 适配器** (`lib/storage/adapters/huawei-obs-adapter.ts`)
 - 生产环境使用
 - 基于 AWS SDK S3 兼容 API (`@aws-sdk/client-s3`)
@@ -66,7 +60,7 @@
 
 **通用健康检查** (`scripts/health-check-storage.ts`)
 - 自动检测当前配置的存储服务
-- 支持 MinIO 和华为云 OBS
+- 支持华为云 OBS
 - 运行命令: `pnpm storage:health`
 
 ### 5. 配置文件更新
@@ -74,19 +68,12 @@
 **环境变量配置** (`.env` 和 `.env.example`)
 ```bash
 # 存储提供商选择
-STORAGE_PROVIDER=minio  # 或 huawei-obs
+STORAGE_PROVIDER=huawei-obs
 
-# MinIO 配置(本地开发)
-MINIO_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_USE_SSL=false
-MINIO_BUCKET_DOCUMENTS=archmind-documents
-
-# 华为云 OBS 配置(生产环境)
+# 华为云 OBS 配置
 HUAWEI_OBS_REGION=cn-north-4
-HUAWEI_OBS_ACCESS_KEY=HPUA7PAVBOZNZM7PI68H
-HUAWEI_OBS_SECRET_KEY=***
+HUAWEI_OBS_ACCESS_KEY=your-access-key
+HUAWEI_OBS_SECRET_KEY=your-secret-key
 HUAWEI_OBS_BUCKET=archmind-documents
 ```
 
@@ -132,7 +119,6 @@ HUAWEI_OBS_BUCKET=archmind-documents
   "dependencies": {
     "@aws-sdk/client-s3": "^3.986.0",
     "@aws-sdk/s3-request-presigner": "^3.986.0",
-    "minio": "^8.0.6",
     "nanoid": "^5.1.6"
   }
 }
@@ -148,7 +134,6 @@ ArchMind/
 │   ├── storage-adapter.ts              # 统一接口定义
 │   ├── storage-factory.ts              # 工厂模式实现
 │   └── adapters/
-│       ├── minio-adapter.ts            # MinIO 适配器
 │       └── huawei-obs-adapter.ts       # 华为云 OBS 适配器
 ├── scripts/
 │   ├── test-huawei-obs.ts              # OBS 连接测试
@@ -169,20 +154,7 @@ ArchMind/
 
 ## 🎯 使用方式
 
-### 开发环境(使用 MinIO)
-
-```bash
-# 1. 启动 MinIO
-docker-compose -f docker-compose.minio.yml up -d
-
-# 2. 配置环境变量
-echo "STORAGE_PROVIDER=minio" >> .env
-
-# 3. 健康检查
-pnpm storage:health
-```
-
-### 生产环境(使用华为云 OBS)
+### 配置华为云 OBS
 
 ```bash
 # 1. 配置环境变量
@@ -200,7 +172,7 @@ pnpm dev
 ```typescript
 import { getStorageClient, generateObjectKey } from '~/lib/storage/storage-factory'
 
-// 自动选择存储后端(MinIO 或华为云 OBS)
+// 自动选择存储后端（华为云 OBS）
 const storage = getStorageClient()
 
 // 上传文件
@@ -214,19 +186,9 @@ const downloadUrl = await storage.generatePresignedUrl(objectKey, 3600)
 await storage.deleteFile(objectKey)
 ```
 
-## 🔧 切换存储后端
+## 🔧 存储后端
 
-只需修改一个环境变量即可切换:
-
-```bash
-# 使用 MinIO
-STORAGE_PROVIDER=minio
-
-# 使用华为云 OBS
-STORAGE_PROVIDER=huawei-obs
-```
-
-**无需修改任何业务代码!**
+当前使用华为云 OBS，通过 `STORAGE_PROVIDER=huawei-obs` 配置。
 
 ## ✨ 核心优势
 
@@ -236,8 +198,7 @@ STORAGE_PROVIDER=huawei-obs
 - 易于测试和维护
 
 ### 2. 灵活切换
-- 开发环境用 MinIO,成本为零
-- 生产环境用华为云 OBS,高可用高性能
+- 生产环境用华为云 OBS，高可用高性能
 - 通过环境变量一键切换
 
 ### 3. 易于扩展

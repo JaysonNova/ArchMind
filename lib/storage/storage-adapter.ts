@@ -1,6 +1,6 @@
 /**
  * 统一存储适配器接口
- * 支持多种对象存储后端: MinIO, 华为云 OBS, 阿里云 OSS, 腾讯云 COS 等
+ * 支持多种对象存储后端: 华为云 OBS, 阿里云 OSS, 腾讯云 COS 等
  */
 
 export interface UploadResult {
@@ -87,7 +87,7 @@ export interface StorageAdapter {
  * 存储配置接口
  */
 export interface StorageConfig {
-  provider: 'minio' | 'huawei-obs' | 'aliyun-oss' | 'tencent-cos'
+  provider: 'huawei-obs' | 'aliyun-oss' | 'tencent-cos'
   bucket: string
   region?: string
   endpoint?: string

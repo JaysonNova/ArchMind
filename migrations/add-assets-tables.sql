@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS assets (
   file_size INTEGER NOT NULL,
 
   -- 存储信息
-  storage_provider VARCHAR(50) DEFAULT 'minio',
+  storage_provider VARCHAR(50) DEFAULT 'huawei-obs',
   storage_bucket VARCHAR(200),
   storage_key VARCHAR(1000) NOT NULL,
   content_hash VARCHAR(64),

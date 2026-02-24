@@ -7,10 +7,7 @@
 通过环境变量 `STORAGE_PROVIDER` 选择存储后端:
 
 ```bash
-# 本地开发 - 使用 MinIO
-STORAGE_PROVIDER=minio
-
-# 生产环境 - 使用华为云 OBS
+# 使用华为云 OBS
 STORAGE_PROVIDER=huawei-obs
 ```
 
@@ -20,7 +17,7 @@ STORAGE_PROVIDER=huawei-obs
 import { getStorageClient } from '~/lib/storage/storage-factory'
 
 const storage = getStorageClient()
-// 自动根据 STORAGE_PROVIDER 返回 MinioAdapter 或 HuaweiOBSAdapter
+// 根据 STORAGE_PROVIDER 返回 HuaweiOBSAdapter
 ```
 
 ## API 使用示例
@@ -362,27 +359,12 @@ pnpm storage:health
 pnpm storage:test-obs
 ```
 
-## 环境切换
+## 环境配置
 
-### 开发环境(MinIO)
+### 华为云 OBS
 
 ```bash
 # .env
-STORAGE_PROVIDER=minio
-MINIO_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin123
-```
-
-启动 MinIO:
-```bash
-docker-compose -f docker-compose.minio.yml up -d
-```
-
-### 生产环境(华为云 OBS)
-
-```bash
-# .env.production
 STORAGE_PROVIDER=huawei-obs
 HUAWEI_OBS_REGION=cn-north-4
 HUAWEI_OBS_ACCESS_KEY=your_ak_here
@@ -488,6 +470,5 @@ async function getCachedPresignedUrl(objectKey: string): Promise<string> {
 
 ## 相关文档
 
-- [MinIO 部署指南](./minio-setup.md)
 - [华为云 OBS 部署指南](./huawei-obs-deployment.md)
 - [数据迁移指南](./storage-migration.md)

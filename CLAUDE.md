@@ -300,13 +300,13 @@ DATABASE_POOL_MIN=2
 DATABASE_POOL_MAX=10
 
 # 存储提供商
-STORAGE_PROVIDER=minio  # minio / huawei-obs
+STORAGE_PROVIDER=huawei-obs
 
-# MinIO (本地)
-MINIO_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin123
-MINIO_USE_SSL=false
+# 华为云 OBS
+HUAWEI_OBS_REGION=cn-north-4
+HUAWEI_OBS_ACCESS_KEY=your-access-key
+HUAWEI_OBS_SECRET_KEY=your-secret-key
+HUAWEI_OBS_BUCKET=archmind-documents
 
 # AI 模型
 ANTHROPIC_API_KEY=xxx

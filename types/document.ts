@@ -16,7 +16,7 @@ export interface Document {
   status?: string;
 
   // 存储相关字段
-  storageProvider?: 'local' | 'minio' | 'huawei-obs' | 's3';
+  storageProvider?: 'huawei-obs' | 's3';
   storageBucket?: string;
   storageKey?: string;
   contentHash?: string;

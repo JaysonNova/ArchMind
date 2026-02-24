@@ -2,21 +2,18 @@
 
 ## 概述
 
-ArchMind 支持使用华为云对象存储服务(OBS)作为生产环境的存储后端。通过统一的存储适配器接口,可以轻松在 MinIO(本地开发)和华为云 OBS(生产环境)之间切换。
+ArchMind 使用华为云对象存储服务（OBS）作为存储后端。
 
-## 架构优势
+## 架构
 
-### 统一接口设计
 ```
 StorageAdapter 接口
-    ├── MinioAdapter (本地开发)
-    └── HuaweiOBSAdapter (华��云生产)
+    └── HuaweiOBSAdapter (华为云 OBS)
 ```
 
 **优点:**
-- 开发环境使用 MinIO,无需付费
-- 生产环境使用华为云 OBS,高可用、高性能
-- 代码无需修改,仅需更改环境变量
+- 生产环境使用华为云 OBS，高可用、高性能
+- 代码无需修改，仅需配置环境变量
 - 支持未来扩展到阿里云 OSS、腾讯云 COS 等
 
 ## 前置条件
@@ -66,8 +63,6 @@ StorageAdapter 接口
 
 ```bash
 # 对象存储配置
-# 开发环境: minio
-# 生产环境: huawei-obs
 STORAGE_PROVIDER=huawei-obs
 
 # 华为云 OBS 配置
@@ -137,7 +132,7 @@ pnpm tsx scripts/test-huawei-obs.ts
 import { getStorageClient } from '~/lib/storage/storage-factory'
 
 export default defineEventHandler(async (event) => {
-  // 自动根据环境变量选择 MinIO 或华为云 OBS
+  // 根据环境变量选择华为云 OBS
   const storage = getStorageClient()
 
   // 上传文件
@@ -157,22 +152,14 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
-**优势:**
-- 业务代码无需修改
-- 本地开发用 MinIO(`STORAGE_PROVIDER=minio`)
-- 生产环境用华为云 OBS(`STORAGE_PROVIDER=huawei-obs`)
+**配置:**
+- 生产环境用华为云 OBS（`STORAGE_PROVIDER=huawei-obs`）
 
 ## 生产部署最佳实践
 
-### 1. 环境隔离
+### 1. 环境配置
 
-**开发环境 (.env.development):**
-```bash
-STORAGE_PROVIDER=minio
-MINIO_ENDPOINT=localhost:9000
-```
-
-**生产环境 (.env.production):**
+**生产环境 (.env):**
 ```bash
 STORAGE_PROVIDER=huawei-obs
 HUAWEI_OBS_REGION=cn-north-4
@@ -318,41 +305,23 @@ export class HuaweiOBSAdapter implements StorageAdapter {
 
 ## 数据迁移
 
-### 从 MinIO 迁移到华为云 OBS
-
-**步骤:**
+如需从其他存储迁移到华为云 OBS，请参考以下步骤：
 
 1. **确保华为云 OBS 配置正确:**
 ```bash
 pnpm tsx scripts/test-huawei-obs.ts
 ```
 
-2. **运行迁移脚本:**
-```bash
-# TODO: 实现迁移脚本
-pnpm tsx scripts/migrate-to-obs.ts
-```
-
-3. **验证数据完整性:**
-```bash
-# 对比文件数量和总大小
-```
-
-4. **切换环境变量:**
+2. **切换环境变量:**
 ```bash
 # .env
 STORAGE_PROVIDER=huawei-obs
 ```
 
-5. **测试应用功能:**
+3. **测试应用功能:**
 - 上传新文档
 - 下载现有文档
 - 删除测试文档
-
-6. **备份 MinIO 数据:**
-```bash
-# 保留 MinIO 数据作为备份,确认无误后再清理
-```
 
 ## 故障排查
 

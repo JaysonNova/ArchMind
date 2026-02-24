@@ -57,7 +57,6 @@ next-env.d.ts
 
 # temp files
 /temp
-/minio
 
 # secrets and credentials (API keys, cloud credentials, etc.)
 .secrets/

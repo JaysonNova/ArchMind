@@ -26,7 +26,7 @@ export class AssetDAO {
       data.fileName,
       data.fileType,
       data.fileSize,
-      data.storageProvider || 'minio',
+      data.storageProvider || 'huawei-obs',
       data.storageBucket || null,
       data.storageKey,
       data.contentHash || null,

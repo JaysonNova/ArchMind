@@ -16,7 +16,7 @@ export interface Asset {
   fileSize: number
 
   // 存储信息
-  storageProvider?: 'local' | 'minio' | 'huawei-obs' | 's3'
+  storageProvider?: 'huawei-obs' | 's3'
   storageBucket?: string
   storageKey: string
   contentHash?: string

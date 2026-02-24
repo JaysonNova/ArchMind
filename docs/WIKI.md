@@ -109,7 +109,7 @@
 SHA-256 哈希去重检测
     │ 重复 → 提示用户
     ▼ 不重复
-存储到对象存储 (MinIO/OBS)
+存储到对象存储 (华为云 OBS)
     │
     ▼
 文档元数据入库
@@ -325,7 +325,7 @@ AI 解析 PRD 结构和页面需求
 │                                                                       │
 │  ┌──────────────────────┐  ┌─────────────────────────────────────┐  │
 │  │   Object Storage      │  │          External APIs              │  │
-│  │  MinIO (local dev)    │  │  Anthropic / OpenAI / Google         │  │
+│  │  Huawei OBS            │  │  Anthropic / OpenAI / Google         │  │
 │  │  Huawei OBS (prod)    │  │  Zhipu / Qwen / Baidu / DeepSeek   │  │
 │  │  Storage Abstraction  │  │  Ollama (local), SMTP (email)       │  │
 │  └──────────────────────┘  └─────────────────────────────────────┘  │
@@ -662,7 +662,7 @@ CREATE TABLE assets (
   file_name         VARCHAR(500) NOT NULL,
   file_type         VARCHAR(50) NOT NULL,
   file_size         INTEGER NOT NULL,
-  storage_provider  VARCHAR(50) DEFAULT 'minio',
+  storage_provider  VARCHAR(50) DEFAULT 'huawei-obs',
   storage_bucket    VARCHAR(200),
   storage_key       VARCHAR(1000) NOT NULL,
   content_hash      VARCHAR(64),
@@ -1286,10 +1286,9 @@ interface StorageAdapter {
 
 | 提供商 | 适用场景 | 配置 |
 |--------|----------|------|
-| MinIO | 本地开发、私有化部署 | `STORAGE_PROVIDER=minio` |
 | 华为云 OBS | 生产环境 | `STORAGE_PROVIDER=huawei-obs` |
 
-MinIO 兼容 S3 API，通过 `@aws-sdk/client-s3` 实现。
+华为云 OBS 通过 S3 兼容 API（`@aws-sdk/client-s3`）实现。
 
 ### 11.3 文件组织结构
 
@@ -1510,14 +1509,7 @@ DATABASE_POOL_MIN=2
 DATABASE_POOL_MAX=10
 
 # ==================== 对象存储 ====================
-STORAGE_PROVIDER=minio          # minio | huawei-obs
-
-# MinIO (本地开发)
-MINIO_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin123
-MINIO_USE_SSL=false
-MINIO_BUCKET_NAME=archmind
+STORAGE_PROVIDER=huawei-obs
 
 # 华为云 OBS (生产)
 HUAWEI_OBS_REGION=cn-north-4

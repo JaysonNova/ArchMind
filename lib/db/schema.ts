@@ -296,7 +296,7 @@ export const assets = pgTable('assets', {
   fileSize: integer('file_size').notNull(),
 
   // 存储信息
-  storageProvider: varchar('storage_provider', { length: 50 }).default('minio'),
+  storageProvider: varchar('storage_provider', { length: 50 }).default('huawei-obs'),
   storageBucket: varchar('storage_bucket', { length: 200 }),
   storageKey: varchar('storage_key', { length: 1000 }).notNull(),
   contentHash: varchar('content_hash', { length: 64 }),

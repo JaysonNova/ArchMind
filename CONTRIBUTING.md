@@ -143,13 +143,10 @@ pnpm install
 cp .env.example .env
 # 编辑 .env 文件
 
-# 4. 启动 MinIO
-docker-compose -f docker-compose.minio.yml up -d
-
-# 5. 初始化数据库
+# 4. 初始化数据库
 pnpm db:init
 
-# 6. 启动开发服务器
+# 5. 启动开发服务器
 pnpm dev
 ```
 

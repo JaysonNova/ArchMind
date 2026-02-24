@@ -81,10 +81,8 @@ export default defineEventHandler(async (event) => {
     })
 
     // 获取存储配置
-    const storageProvider = process.env.STORAGE_PROVIDER || 'minio'
-    const storageBucket = storageProvider === 'huawei-obs'
-      ? process.env.HUAWEI_OBS_BUCKET || 'archmind-assets'
-      : process.env.MINIO_BUCKET_ASSETS || 'archmind-assets'
+    const storageProvider = process.env.STORAGE_PROVIDER || 'huawei-obs'
+    const storageBucket = process.env.HUAWEI_OBS_BUCKET || 'archmind-assets'
 
     // 创建资源记录
     const asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'> = {

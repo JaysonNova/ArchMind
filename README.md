@@ -166,8 +166,8 @@ ENCRYPTION_KEY=your-32-char-encryption-key1234
 # 选择至少一个 AI 提供商（推荐 GLM，性价比高）
 GLM_API_KEY=your-glm-api-key
 
-# 存储（可选，默认使用本地文件）
-STORAGE_PROVIDER=minio
+# 存储（华为云 OBS）
+STORAGE_PROVIDER=huawei-obs
 ```
 
 ---
@@ -200,7 +200,7 @@ STORAGE_PROVIDER=minio
 ┌──────▼──────────────────▼──────────────────────▼────────┐
 │                    Data Layer                             │
 │  PostgreSQL 14+ (pgvector) · Drizzle ORM · 17 DAOs      │
-│  MinIO / Huawei OBS · 23+ Tables                        │
+│  Huawei OBS · 23+ Tables                                │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -263,16 +263,9 @@ DATABASE_POOL_MIN=2
 DATABASE_POOL_MAX=10
 
 # ==================== 对象存储 ====================
-STORAGE_PROVIDER=minio          # minio | huawei-obs
+STORAGE_PROVIDER=huawei-obs
 
-# MinIO (本地开发)
-MINIO_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin123
-MINIO_USE_SSL=false
-MINIO_BUCKET_NAME=archmind
-
-# 华为云 OBS (生产)
+# 华为云 OBS
 HUAWEI_OBS_REGION=cn-north-4
 HUAWEI_OBS_ACCESS_KEY=your-access-key
 HUAWEI_OBS_SECRET_KEY=your-secret-key
@@ -464,7 +457,7 @@ pm2 save && pm2 startup
 | 配置项 | 建议值 | 说明 |
 |--------|--------|------|
 | `DATABASE_POOL_MAX` | 20 | 高并发下提高连接池上限 |
-| `STORAGE_PROVIDER` | `huawei-obs` | 使用云存储替代本地 MinIO |
+| `STORAGE_PROVIDER` | `huawei-obs` | 使用华为云 OBS 对象存储 |
 | `NODE_ENV` | `production` | 启用生产模式优化 |
 | JWT 有效期 | 根据安全需求 | 当前默认 7 天 |
 

@@ -12,14 +12,12 @@ BASE_URL="http://localhost:3000"
 echo "📋 测试环境检查..."
 echo ""
 
-# 1. 检查 MinIO
-echo "1️⃣ 检查 MinIO 容器状态..."
-docker ps | grep minio
-if [ $? -eq 0 ]; then
-  echo "✅ MinIO 容器运行中"
+# 1. 检查存储服务配置
+echo "1️⃣ 检查存储服务配置..."
+if [ -n "$HUAWEI_OBS_ACCESS_KEY" ] && [ -n "$HUAWEI_OBS_SECRET_KEY" ]; then
+  echo "✅ 华为云 OBS 凭证已配置"
 else
-  echo "❌ MinIO 容器未运行,请先启动: docker-compose -f docker-compose.minio.yml up -d"
-  exit 1
+  echo "⚠️  未检测到 HUAWEI_OBS_ACCESS_KEY / HUAWEI_OBS_SECRET_KEY，请检查 .env 配置"
 fi
 echo ""
 
@@ -80,8 +78,9 @@ echo ""
 
 echo "===================="
 echo ""
-echo "📊 MinIO 存储桶信息"
-docker exec archmind-minio mc ls local/ 2>&1 || echo "无法连接 MinIO"
+echo "📦 存储服务信息"
+echo "当前存储提供商: ${STORAGE_PROVIDER:-huawei-obs}"
+echo "OBS Bucket: ${HUAWEI_OBS_BUCKET:-未配置}"
 echo ""
 
 echo "===================="
