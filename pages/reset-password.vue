@@ -219,6 +219,16 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
+// Form state
+const tokenValue = ref('')
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+const focusedField = ref('')
+const tokenError = ref('')
+
 // Clear error on page load
 onMounted(() => {
   authStore.clearError()
@@ -235,16 +245,6 @@ onMounted(() => {
   tokenValue.value = token
   email.value = emailFromQuery
 })
-
-// Form state
-const tokenValue = ref('')
-const email = ref('')
-const password = ref('')
-const confirmPassword = ref('')
-const showPassword = ref(false)
-const showConfirmPassword = ref(false)
-const focusedField = ref('')
-const tokenError = ref('')
 
 // Password strength calculation
 const passwordStrengthPercent = computed(() => {

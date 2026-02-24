@@ -6,7 +6,6 @@
 import type { ImageGenerationAdapter, ImageGenerateOptions, ImageEditOptions, ImageTaskResult } from './image-types'
 import { WanxAdapter } from './adapters/wanx-image'
 import { DalleAdapter } from './adapters/dalle-image'
-import { getAllImageProviders, findImageProviderByModelId } from './image-providers'
 
 export interface ImageManagerConfig {
   dashscopeApiKey?: string // 阿里云 DashScope API Key (通义万象)

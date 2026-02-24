@@ -113,7 +113,7 @@ describe('ChatEngine', () => {
       const { ModelManager } = await import('~/lib/ai/manager')
 
       // 临时替换 getAdapter 返回 null
-      const originalImpl = (ModelManager as any).mockImplementation
+      const _originalImpl = (ModelManager as any).mockImplementation
       ;(ModelManager as any).mockImplementationOnce(function (this: any) {
         this.getAdapter = vi.fn().mockReturnValue(null)
         this.getAvailableModels = () => []

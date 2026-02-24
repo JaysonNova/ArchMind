@@ -10,7 +10,6 @@
 
 import type { ImageGenerationAdapter, ImageGenerateOptions, ImageEditOptions, ImageTaskResult, TaskStatus } from '../image-types'
 import { getImageProviderConfig } from '../image-providers'
-import type { ImageEditFunction } from '~/types/asset'
 
 const DASHSCOPE_BASE_URL = 'https://dashscope.aliyuncs.com'
 
@@ -20,15 +19,6 @@ interface DashScopeResponse {
     task_status: TaskStatus
     results?: Array<{ url: string }>
     message?: string
-  }
-  request_id?: string
-  code?: string
-  message?: string
-}
-
-interface DashScopeSyncResponse {
-  output?: {
-    results?: Array<{ url: string }>
   }
   request_id?: string
   code?: string

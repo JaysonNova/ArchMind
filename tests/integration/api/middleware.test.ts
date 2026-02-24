@@ -3,7 +3,7 @@
  * 测试中间件逻辑（独立于 H3 运行时）
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 
 // ─── 复现 rate-limit 核心计数逻辑 ────────────────────────────────────────────
 

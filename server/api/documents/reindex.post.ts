@@ -8,7 +8,6 @@
 
 import { z } from 'zod'
 import { DocumentDAO } from '~/lib/db/dao/document-dao'
-import { DocumentChunkDAO } from '~/lib/db/dao/document-chunk-dao'
 import { VectorDAO } from '~/lib/db/dao/vector-dao'
 import { DocumentProcessingPipeline } from '~/lib/rag/pipeline'
 import { EmbeddingServiceFactory } from '~/lib/rag/embedding-adapter'
