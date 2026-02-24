@@ -144,8 +144,8 @@ export class PRDGenerator {
     let references: string[] = []
 
     if (useRAG && this.ragRetriever) {
-      // 使用 RAG 检索相关文档
-      const retrievedChunks = await this.ragRetriever.retrieve(userInput, { topK, threshold: 0.7 })
+      // 使用 RAG 检索相关文档（默认混合搜索 RRF，兼顾语义和关键词）
+      const retrievedChunks = await this.ragRetriever.retrieve(userInput, { topK, threshold: 0.7, userId: options?.userId })
 
       if (retrievedChunks.length > 0) {
         const rawContext = this.ragRetriever.summarizeResults(retrievedChunks)
@@ -249,8 +249,8 @@ export class PRDGenerator {
     const references: string[] = []
 
     if (useRAG && this.ragRetriever) {
-      // 使用 RAG 检索相关文档
-      const retrievedChunks = await this.ragRetriever.retrieve(userInput, { topK, threshold: 0.7 })
+      // 使用 RAG 检索相关文档（默认混合搜索 RRF，兼顾语义和关键词）
+      const retrievedChunks = await this.ragRetriever.retrieve(userInput, { topK, threshold: 0.7, userId: options?.userId })
 
       if (retrievedChunks.length > 0) {
         const rawContext = this.ragRetriever.summarizeResults(retrievedChunks)
