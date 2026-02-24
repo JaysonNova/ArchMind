@@ -9,8 +9,32 @@
 
 ## [Unreleased]
 
+---
+
+## [0.1.2] - 2026-02-24
+
 ### 新增
-- 待发布功能...
+
+#### 后端结构化日志系统
+- **统一日志模块** (`lib/logger.ts`): 基于 pino 实现结构化 JSON 日志，支持 `LOG_LEVEL` 环境变量控制输出级别（`trace | debug | info | warn | error | silent`），测试环境自动静默
+- **HTTP 请求日志中间件** (`server/middleware/00.logger.ts`): 记录每个 API 请求的方法、路径、状态码、耗时、IP、userId，注入 `reqId`（nanoid 12位）用于请求追踪
+- **模块化 child logger**: 预定义 `ragLogger`、`prdLogger`、`aiLogger`、`authLogger`、`dbLogger`、`storageLogger`，按模块分类日志便于过滤
+- **替换业务模块 console 调用**: `lib/db/client.ts`、`lib/ai/manager.ts`、`lib/rag/pipeline.ts`、`lib/rag/embedding-adapter.ts`、`lib/storage/storage-factory.ts`、`lib/storage/adapters/huawei-obs-adapter.ts` 中的 console.* 统一替换为结构化日志
+
+#### Git 工作流规范
+- **husky pre-push hook** (`.husky/pre-push`): 推送到 main 分支前强制运行 lint + typecheck + test，本地拦截破损代码
+- **GitHub Branch Protection Rules**: 设置 main 分支保护，要求 PR 合并且 CI 全部通过（`Lint & Type Check`、`Unit Tests`、`Build`）
+- **CLAUDE.md Git Flow 规范**: 新增 Section 0，涵盖提交确认流程、分支策略（main/develop/feature/fix/release）、Conventional Commits 规范、版本发布流程
+
+#### UI 安全改进
+- **AlertDialog 替换 window.confirm()**: `pages/settings/profile.vue` 删除操作改用 shadcn/ui `AlertDialog`，符合项目 UI 规范
+
+### 变更
+- `package.json` 添加 `"prepare": "husky"` 确保团队成员 `pnpm install` 后自动激活 git hooks
+- `.env.example` 新增 `LOG_LEVEL` 配置项说明
+
+### 修复
+- 修复 `package.json` 中 `"prepare"` 字段重复的问题（husky init 导致）
 
 ---
 

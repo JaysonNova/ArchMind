@@ -6,10 +6,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // Mock 适配器 - 必须在导入之前
 vi.mock('~/lib/ai/adapters/claude', () => ({
-  ClaudeAdapter: vi.fn().mockImplementation(function (this: any) {
+  ClaudeAdapter: vi.fn().mockImplementation(function (this: any, apiKey: string, modelId: string) {
     this.name = 'Claude'
     this.provider = 'anthropic'
-    this.modelId = 'claude-3.5-sonnet'
+    this.modelId = modelId
     this.generateText = async () => 'Claude response'
     this.getCapabilities = () => ({
       supportsStreaming: true,
@@ -159,7 +159,7 @@ describe('ModelManager', () => {
       })
 
       const models = manager.getAvailableModels()
-      expect(models).toContain('claude-3.5-sonnet')
+      expect(models).toContain('claude-opus-4-20250514')
       expect(models).toContain('gpt-4o')
     })
   })
@@ -167,7 +167,7 @@ describe('ModelManager', () => {
   describe('getAdapter', () => {
     it('should return adapter for existing model', () => {
       const manager = new ModelManager({ anthropicApiKey: 'test-key' })
-      const adapter = manager.getAdapter('claude-3.5-sonnet')
+      const adapter = manager.getAdapter('claude-opus-4-20250514')
       expect(adapter).toBeDefined()
       expect(adapter?.name).toBe('Claude')
     })
@@ -189,15 +189,20 @@ describe('ModelManager', () => {
 
       const models = manager.getAvailableModels()
       expect(models.length).toBeGreaterThanOrEqual(3)
-      expect(models).toContain('claude-3.5-sonnet')
+      expect(models).toContain('claude-opus-4-20250514')
       expect(models).toContain('gpt-4o')
-      expect(models).toContain('gemini-1.5-pro')
+      expect(models).toContain('gemini-2.0-flash')
     })
   })
 
   describe('selectModelByTask', () => {
     it('should select Claude for PRD generation', () => {
-      const manager = new ModelManager({ anthropicApiKey: 'test-key' })
+      // selectModelByTask maps 'prd_generation' to 'claude-3.5-sonnet'
+      // so we need to pass that model explicitly
+      const manager = new ModelManager({
+        anthropicApiKey: 'test-key',
+        anthropicModels: ['claude-3.5-sonnet']
+      })
       const adapter = manager.selectModelByTask('prd_generation')
       expect(adapter?.modelId).toBe('claude-3.5-sonnet')
     })
@@ -218,9 +223,9 @@ describe('ModelManager', () => {
   describe('getModelInfo', () => {
     it('should return model info for existing model', () => {
       const manager = new ModelManager({ anthropicApiKey: 'test-key' })
-      const info = manager.getModelInfo('claude-3.5-sonnet')
+      const info = manager.getModelInfo('claude-opus-4-20250514')
       expect(info).toBeDefined()
-      expect(info?.modelId).toBe('claude-3.5-sonnet')
+      expect(info?.modelId).toBe('claude-opus-4-20250514')
       expect(info?.capabilities).toBeDefined()
     })
 
@@ -234,7 +239,7 @@ describe('ModelManager', () => {
   describe('estimateCost', () => {
     it('should return cost estimate for existing model', () => {
       const manager = new ModelManager({ anthropicApiKey: 'test-key' })
-      const cost = manager.estimateCost('claude-3.5-sonnet', 1000)
+      const cost = manager.estimateCost('claude-opus-4-20250514', 1000)
       expect(cost).toBeDefined()
       expect(cost?.inputCost).toBeTypeOf('number')
       expect(cost?.currency).toBe('USD')

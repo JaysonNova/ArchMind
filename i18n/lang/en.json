@@ -292,7 +292,8 @@
     "copiedToClipboard": "Copied to clipboard",
     "copyFailed": "Copy failed",
     "lastEdited": "Last edited",
-    "beta": "Beta"
+    "beta": "Beta",
+    "confirmDelete": "Confirm Delete"
   },
   "projects": {
     "title": "Projects",

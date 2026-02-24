@@ -434,6 +434,27 @@
         </form>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Confirm Dialog -->
+    <AlertDialog :open="deleteConfirmOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{{ $t('common.confirmDelete') }}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {{ deleteConfirmMessage }}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="deleteConfirmOpen = false">{{ $t('common.cancel') }}</AlertDialogCancel>
+          <AlertDialogAction
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            @click="confirmDelete"
+          >
+            {{ $t('common.delete') }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
 
@@ -469,6 +490,16 @@ import {
   DialogHeader,
   DialogTitle
 } from '~/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '~/components/ui/alert-dialog'
 import { useToast } from '~/components/ui/toast/use-toast'
 import { useAuthStore } from '@/stores/auth'
 import { useApiConfigs } from '~/composables/useApiConfigs'
@@ -602,6 +633,9 @@ const editingProvider = ref<AIProviderConfig | null>(null)
 const showApiKey = ref(false)
 const showCustomUrl = ref(false)
 const saving = ref(false)
+const deleteConfirmOpen = ref(false)
+const deleteConfirmMessage = ref('')
+const pendingDeleteId = ref<AIProviderType | null>(null)
 const apiKeyInput = ref<HTMLInputElement | null>(null)
 
 // 模型选择相关状态
@@ -788,9 +822,17 @@ async function handleDelete(providerId: AIProviderType) {
   const provider = providers.value.find(p => p.id === providerId)
   if (!provider) return
 
-  if (!confirm(t('profile.models.deleteConfirm', { name: provider.name }))) return
+  pendingDeleteId.value = providerId
+  deleteConfirmMessage.value = t('profile.models.deleteConfirm', { name: provider.name })
+  deleteConfirmOpen.value = true
+}
 
-  const result = await deleteConfig(providerId)
+async function confirmDelete() {
+  deleteConfirmOpen.value = false
+  if (!pendingDeleteId.value) return
+
+  const result = await deleteConfig(pendingDeleteId.value)
+  pendingDeleteId.value = null
   if (result.success) {
     toast({ title: t('profile.models.deleteSuccess'), description: result.message || t('profile.models.configDeleted'), variant: 'success' })
   } else {
