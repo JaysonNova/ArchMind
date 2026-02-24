@@ -10,7 +10,7 @@
 		"generate": "nuxt generate",
 		"preview": "nuxt preview",
 		"postinstall": "nuxt prepare",
-		"prepare": "husky",
+		"prepare": "node --eval \"process.exit(process.env.CI || process.env.DOCKER_BUILD ? 0 : 1)\" || husky",
 		"lint": "eslint .",
 		"typecheck": "nuxt typecheck",
 		"format": "prettier --write \"**/*.{js,ts,vue,json,md,css}\"",

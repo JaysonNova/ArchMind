@@ -52,6 +52,16 @@ release/*     ← 发布分支，从 develop 切出，测试通过后合并到 m
 
 **禁止**直接向 `main` 分支提交代码（GitHub Branch Protection 已强制执行）。
 
+#### 0.2.1 Claude Code 默认行为规则
+
+**除非用户明确说"直接提交到 main"或"直接 push 到 main"，否则 Claude Code 必须：**
+
+1. 在功能分支（`feature/*` 或 `fix/*`）上进行所有代码修改
+2. 完成后 push 功能分支到远程
+3. 创建 PR（提供 PR 描述供用户在 GitHub 上合并）
+
+**禁止**在未获得用户明确授权的情况下直接操作 `main` 分支。
+
 #### 0.3 标准开发流程
 
 ```bash
