@@ -17,6 +17,8 @@ COPY package.json pnpm-lock.yaml ./
 
 # 安装全部依赖（包含 dev，以便原生模块能正确编译）
 # 之后用 --prod 过滤只保留生产依赖
+# DOCKER_BUILD=1 用于跳过 husky prepare 脚本
+ENV DOCKER_BUILD=1
 RUN pnpm install --frozen-lockfile
 RUN pnpm prune --prod
 
@@ -32,6 +34,7 @@ WORKDIR /app
 
 # 复制依赖文件并安装全部依赖
 COPY package.json pnpm-lock.yaml ./
+ENV DOCKER_BUILD=1
 RUN pnpm install --frozen-lockfile
 
 # 复制源代码
