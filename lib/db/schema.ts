@@ -52,7 +52,7 @@ export const users = pgTable('users', {
 // ============================================
 export const documents = pgTable('documents', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
   title: varchar('title', { length: 500 }).notNull(),
   filePath: text('file_path').notNull(),
@@ -94,7 +94,7 @@ export const documentChunks = pgTable('document_chunks', {
 // ============================================
 export const prdDocuments = pgTable('prd_documents', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
   title: varchar('title', { length: 500 }).notNull(),
   content: text('content').notNull(),
@@ -191,7 +191,7 @@ export const generationHistory = pgTable('generation_history', {
 // ============================================
 export const conversations = pgTable('conversations', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   title: varchar('title', { length: 500 }).notNull(),
   summary: text('summary'),
   messageCount: integer('message_count').default(0),
@@ -233,7 +233,7 @@ export const conversationMessages = pgTable('conversation_messages', {
 export const prototypes = pgTable('prototypes', {
   id: uuid('id').primaryKey().defaultRandom(),
   prdId: uuid('prd_id').references(() => prdDocuments.id, { onDelete: 'set null' }),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   title: varchar('title', { length: 500 }).notNull(),
   description: text('description'),
   currentVersion: integer('current_version').default(1),
@@ -288,7 +288,7 @@ export const prototypeVersions = pgTable('prototype_versions', {
 // ============================================
 export const assets = pgTable('assets', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
 
   // 基本信息
   title: varchar('title', { length: 500 }).notNull(),
