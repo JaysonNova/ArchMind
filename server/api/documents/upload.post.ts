@@ -1,6 +1,6 @@
 /**
  * 文档上传 API 端点（重构版）
- * 使用对象存储（华为云 OBS 或 MinIO）替代本地文件系统
+ * 使用对象存储（华为云 OBS）替代本地文件系统
  */
 
 import { promises as fs } from 'fs'
@@ -23,11 +23,11 @@ const FILE_TYPE_MAPPING: Record<string, string> = {
   '.markdown': 'markdown'
 }
 
-// 最大文件大小：100MB
-const MAX_FILE_SIZE = 100 * 1024 * 1024
+// Vercel Serverless 请求体限制为 4.5MB，本地环境允许 100MB
+const MAX_FILE_SIZE = process.env.VERCEL ? 4 * 1024 * 1024 : 100 * 1024 * 1024
 
-// 临时目录
-const TEMP_DIR = 'temp'
+// 临时目录：Vercel 只有 /tmp 可写
+const TEMP_DIR = process.env.VERCEL ? '/tmp' : 'temp'
 
 /**
  * 计算文件 SHA-256 哈希
@@ -170,10 +170,8 @@ export default defineEventHandler(async (event) => {
     console.log(`Upload successful: ${uploadResult.objectKey}`)
 
     // 获取当前存储配置
-    const storageProvider = process.env.STORAGE_PROVIDER || 'minio'
-    const storageBucket = storageProvider === 'huawei-obs'
-      ? process.env.HUAWEI_OBS_BUCKET || 'archmind-documents'
-      : process.env.MINIO_BUCKET_DOCUMENTS || 'archmind-documents'
+    const storageProvider = process.env.STORAGE_PROVIDER || 'huawei-obs'
+    const storageBucket = process.env.HUAWEI_OBS_BUCKET || 'archmind-documents'
 
     // 创建文档记录
     const doc: Omit<Document, 'id' | 'createdAt' | 'updatedAt'> = {

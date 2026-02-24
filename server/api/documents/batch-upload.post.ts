@@ -90,8 +90,8 @@ async function processFile(file: any): Promise<UploadResult> {
       }
     }
 
-    // 2. 保存到临时目录
-    const tempDir = join(process.cwd(), 'temp')
+    // 2. 保存到临时目录（Vercel 只有 /tmp 可写）
+    const tempDir = process.env.VERCEL ? '/tmp' : join(process.cwd(), 'temp')
     tempFilePath = join(tempDir, `${Date.now()}_${fileName}`)
     await writeFile(tempFilePath, file.data)
 
@@ -149,7 +149,7 @@ async function processFile(file: any): Promise<UploadResult> {
       fileSize: uploadResult.size,
       content,
       contentHash,
-      storageProvider: (uploadResult.provider || 'minio') as 'local' | 'minio' | 'huawei-obs' | 's3',
+      storageProvider: (uploadResult.provider || 'huawei-obs') as 'huawei-obs' | 's3',
       storageBucket: 'archmind-documents',
       storageKey: objectKey,
       processingStatus: 'pending',

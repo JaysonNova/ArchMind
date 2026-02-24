@@ -13,20 +13,26 @@ export class DatabaseClient {
   private static instance: DatabaseClient | undefined
 
   private constructor () {
+    const isServerless = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME
     const poolConfig: PoolConfig = {
       connectionString: process.env.DATABASE_URL,
-      min: Number(process.env.DATABASE_POOL_MIN) || 2,
-      max: Number(process.env.DATABASE_POOL_MAX) || 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000
+      // Serverless 环境使用更小的连接池，避免超出连接数限制
+      min: isServerless ? 0 : (Number(process.env.DATABASE_POOL_MIN) || 2),
+      max: isServerless ? 3 : (Number(process.env.DATABASE_POOL_MAX) || 10),
+      idleTimeoutMillis: isServerless ? 5000 : 30000,
+      connectionTimeoutMillis: 5000,
+      // Neon 需要 SSL
+      ssl: process.env.DATABASE_URL?.includes('neon.tech') ? { rejectUnauthorized: false } : undefined
     }
 
     this.pool = new Pool(poolConfig)
 
-    // 连接池错误处理
+    // 连接池错误处理（Serverless 环境不 exit）
     this.pool.on('error', (err) => {
       console.error('Unexpected error on idle client', err)
-      process.exit(-1)
+      if (!process.env.VERCEL) {
+        process.exit(-1)
+      }
     })
   }
 
