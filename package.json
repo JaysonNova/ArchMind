@@ -105,7 +105,6 @@
 		"@nuxt/devtools": "^1.7.0",
 		"@nuxt/test-utils": "^4.0.0",
 		"@nuxtjs/eslint-config-typescript": "^12.1.0",
-		"@tailwindcss/postcss": "^4.1.18",
 		"@tailwindcss/typography": "^0.5.19",
 		"@types/archiver": "^7.0.0",
 		"@types/bcrypt": "^6.0.0",

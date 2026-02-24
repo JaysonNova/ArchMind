@@ -22,23 +22,23 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n'
   ],
 
+  tailwindcss: {
+    configPath: '~/tailwind.config.ts',
+    cssPath: '~/assets/css/main.css',
+    exposeConfig: false
+  },
+
+  vite: {
+    build: {
+      cssCodeSplit: false
+    }
+  },
+
   i18n: {
     locales: [
-      {
-        code: 'en',
-        name: 'English',
-        file: 'en.json'
-      },
-      {
-        code: 'zh-CN',
-        name: '简体中文',
-        file: 'zh-CN.json'
-      },
-      {
-        code: 'zh',
-        name: '简体中文',
-        file: 'zh-CN.json'
-      }
+      { code: 'en', name: 'English', file: 'en.json' },
+      { code: 'zh-CN', name: '简体中文', file: 'zh-CN.json' },
+      { code: 'zh', name: '简体中文', file: 'zh-CN.json' }
     ],
     defaultLocale: 'zh-CN',
     strategy: 'no_prefix',
@@ -59,12 +59,9 @@ export default defineNuxtConfig({
     {
       path: '~/components',
       pathPrefix: false,
-      // Ignore index.ts files in ui components to prevent naming conflicts
       ignore: ['**/ui/**/index.ts']
     }
   ],
-
-  css: ['~/assets/css/main.css'],
 
   colorMode: {
     classSuffix: ''
@@ -76,7 +73,6 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // Private keys (server-side only)
     anthropicApiKey: process.env.ANTHROPIC_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY,
     googleApiKey: process.env.GOOGLE_API_KEY,
@@ -86,16 +82,12 @@ export default defineNuxtConfig({
     deepseekApiKey: process.env.DEEPSEEK_API_KEY,
     ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
     databasePath: process.env.DATABASE_PATH || './data/database.db',
-
-    // Email configuration (server-side only)
     emailHost: process.env.EMAIL_HOST || 'smtp.qq.com',
     emailPort: parseInt(process.env.EMAIL_PORT || '465'),
     emailSecure: process.env.EMAIL_SECURE !== 'false',
     emailUser: process.env.EMAIL_USER,
     emailPass: process.env.EMAIL_PASS,
     emailFrom: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-
-    // Public keys (exposed to client)
     public: {
       appUrl: process.env.APP_URL || 'http://localhost:3000',
       baseUrl: process.env.BASE_URL || process.env.APP_URL || 'http://localhost:3000'

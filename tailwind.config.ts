@@ -7,7 +7,10 @@ const config: Config = {
     './layouts/**/*.vue',
     './pages/**/*.vue',
     './plugins/**/*.{js,ts}',
-    './app.vue'
+    './composables/**/*.{js,ts}',
+    './stores/**/*.{js,ts}',
+    './app.vue',
+    './error.vue'
   ],
   theme: {
   	extend: {
