@@ -25,6 +25,7 @@
 - [文档导航](#文档导航)
 - [路线图](#路线图)
 - [贡献指南](#贡献指南)
+- [贡献者](#贡献者)
 
 ---
 
@@ -594,6 +595,16 @@ git push origin feat/your-feature
 ## License
 
 [MIT](LICENSE)
+
+---
+
+## 贡献者
+
+感谢所有为本项目做出贡献的人！
+
+<a href="https://github.com/ssyamv/ArchMind/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ssyamv/ArchMind" alt="Contributors" />
+</a>
 
 ---
 
