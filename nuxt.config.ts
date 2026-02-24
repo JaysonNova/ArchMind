@@ -75,13 +75,6 @@ export default defineNuxtConfig({
     typeCheck: false
   },
 
-  postcss: {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {}
-    }
-  },
-
   runtimeConfig: {
     // Private keys (server-side only)
     anthropicApiKey: process.env.ANTHROPIC_API_KEY,
