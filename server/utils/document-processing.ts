@@ -3,13 +3,31 @@
  * 供 upload.post.ts 和 batch-upload.post.ts 共用
  */
 
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 import YAML from 'js-yaml'
 import { DocumentDAO } from '~/lib/db/dao/document-dao'
 import { DocumentProcessingPipeline } from '~/lib/rag/pipeline'
 import { EmbeddingServiceFactory } from '~/lib/rag/embedding-adapter'
 import { getModelManager } from '~/lib/ai/manager'
+
+/**
+ * 读取 ai-models.yaml 配置（本地文件系统优先，Vercel 降级为 serverAssets）
+ */
+async function readModelsConfig (): Promise<{ ai_models: { models: Record<string, any> } }> {
+  const filePath = join(process.cwd(), 'config', 'ai-models.yaml')
+  if (existsSync(filePath)) {
+    const content = readFileSync(filePath, 'utf-8')
+    return YAML.load(content) as { ai_models: { models: Record<string, any> } }
+  }
+  // Vercel 环境：从 serverAssets 读取（nitro.serverAssets 打包的内容）
+  const storage = useStorage('assets:config')
+  const content = await storage.getItem<string>('ai-models.yaml')
+  if (!content) {
+    throw new Error('ai-models.yaml not found in filesystem or serverAssets')
+  }
+  return YAML.load(content) as { ai_models: { models: Record<string, any> } }
+}
 
 /**
  * 异步处理文档向量化（fire-and-forget）
@@ -40,9 +58,7 @@ export async function processDocumentAsync(documentId: string, content: string):
     const modelManager = getModelManager(config)
     const defaultModelId = modelManager.getDefaultModelId()
 
-    const configPath = join(process.cwd(), 'config', 'ai-models.yaml')
-    const configContent = readFileSync(configPath, 'utf-8')
-    const parsed = YAML.load(configContent) as { ai_models: { models: Record<string, any> } }
+    const parsed = await readModelsConfig()
     const modelConfig = parsed.ai_models.models[defaultModelId]
 
     if (!modelConfig) {

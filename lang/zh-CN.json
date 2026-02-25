@@ -403,6 +403,13 @@
         "reindex": "重新索引",
         "delete": "删除"
       }
+    },
+    "status": {
+      "indexed": "已索引",
+      "processing": "索引中",
+      "pending": "待索引",
+      "retrying": "重试中",
+      "failed": "索引失败"
     }
   },
   "settings": {
