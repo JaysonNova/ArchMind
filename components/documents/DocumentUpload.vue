@@ -5,7 +5,7 @@
       :class="uploading ? 'pointer-events-none' : ''"
       @dragover.prevent
       @drop.prevent="handleDrop"
-      @click="fileInput?.click()"
+      @click.self="fileInput?.click()"
     >
       <input
         ref="fileInput"
@@ -15,7 +15,7 @@
         @change="handleFileSelect"
       >
 
-      <div v-if="!uploading && !processing">
+      <div v-if="!uploading">
         <CloudUpload class="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
         <p class="text-foreground mb-2">
           {{ $t('documents.upload.dragDrop') }}
@@ -26,28 +26,10 @@
       </div>
 
       <!-- 上传阶段 -->
-      <div v-else-if="uploading">
+      <div v-else>
         <Progress :model-value="uploadProgress" class="mb-2" />
         <p class="text-muted-foreground">
           {{ $t('documents.upload.uploading', { progress: uploadProgress }) }}
-        </p>
-      </div>
-
-      <!-- 向量化处理阶段 -->
-      <div v-else-if="processing">
-        <div class="flex items-center justify-center mb-3">
-          <Loader2 class="w-8 h-8 animate-spin text-primary" />
-        </div>
-        <Progress :model-value="sseProgress" class="mb-2" />
-        <p class="text-sm text-muted-foreground">
-          <template v-if="sseStatus === 'pending'">{{ $t('documents.upload.queued') }}</template>
-          <template v-else-if="sseStatus === 'processing'">
-            {{ $t('documents.upload.vectorizing') }}
-            <span v-if="sseChunksCount && sseVectorsCount">
-              ({{ sseVectorsCount }}/{{ sseChunksCount }} chunks)
-            </span>
-          </template>
-          <template v-else>{{ $t('documents.upload.processing') }}</template>
         </p>
       </div>
     </div>
@@ -62,8 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { CloudUpload, AlertCircle, Loader2 } from 'lucide-vue-next'
-import { useDocumentSSE } from '~/composables/useDocumentSSE'
+import { CloudUpload, AlertCircle } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -75,18 +56,6 @@ const fileInput = ref<HTMLInputElement>()
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const error = ref('')
-const processing = ref(false)
-
-const {
-  status: sseStatus,
-  progress: sseProgress,
-  chunksCount: sseChunksCount,
-  vectorsCount: sseVectorsCount,
-  isCompleted: sseCompleted,
-  isFailed: sseFailed,
-  subscribe: sseSubscribe,
-  reset: sseReset
-} = useDocumentSSE()
 
 const emit = defineEmits<{
   uploaded: [documentId: string];
@@ -111,8 +80,6 @@ async function uploadFile (file: File) {
   error.value = ''
   uploading.value = true
   uploadProgress.value = 0
-  processing.value = false
-  sseReset()
 
   try {
     const formData = new FormData()
@@ -129,16 +96,8 @@ async function uploadFile (file: File) {
     uploadProgress.value = 100
     uploading.value = false
 
-    // 上传成功后订阅 SSE，展示向量化进度
-    const documentId = response.data.id
-    processing.value = true
-
-    sseSubscribe(documentId, (statusEvent) => {
-      if (statusEvent.status === 'completed' || statusEvent.status === 'failed') {
-        processing.value = false
-        emit('uploaded', documentId)
-      }
-    })
+    // 上传成功后立即通知父组件刷新列表，向量化在后台进行
+    emit('uploaded', response.data.id)
   } catch (err: any) {
     error.value = err.message || t('documents.upload.uploadFailed')
     uploading.value = false
@@ -146,11 +105,4 @@ async function uploadFile (file: File) {
     uploadProgress.value = 0
   }
 }
-
-// 监听 SSE 完成/失败（作为 sseSubscribe 回调的补充）
-watch([sseCompleted, sseFailed], ([completed, failed]) => {
-  if ((completed || failed) && processing.value) {
-    processing.value = false
-  }
-})
 </script>
