@@ -383,7 +383,10 @@
       "dragDrop": "拖拽文件到此处或点击选择文件",
       "supportedFormats": "支持 PDF, DOCX, Markdown 格式,最大 10MB",
       "uploading": "上传中... {progress}%",
-      "uploadFailed": "上传失败"
+      "uploadFailed": "上传失败",
+      "queued": "已加入队列，等待向量化处理...",
+      "vectorizing": "向量化处理中...",
+      "processing": "文档处理中..."
     },
     "details": {
       "title": "文档详情",

@@ -19,6 +19,30 @@ export interface Workspace {
   }
 }
 
+export interface WorkspaceMember {
+  id: string
+  workspaceId: string
+  userId: string
+  role: 'owner' | 'admin' | 'member'
+  joinedAt: string
+  userEmail?: string
+  userFullName?: string
+  userAvatarUrl?: string
+  username?: string
+}
+
+export interface WorkspaceInvitation {
+  id: string
+  workspaceId: string
+  inviterId: string
+  email: string
+  role: 'admin' | 'member'
+  token: string
+  status: 'pending' | 'accepted' | 'expired'
+  expiresAt: string
+  createdAt: string
+}
+
 const workspaces = ref<Workspace[]>([])
 const currentWorkspaceId = ref<string | null>(null)
 const loading = ref(false)
@@ -39,7 +63,7 @@ export function useWorkspace () {
   async function loadWorkspaces () {
     loading.value = true
     try {
-      const response = await $fetch<{ success: boolean; data: Workspace[] }>('/api/workspaces')
+      const response = await $fetch<{ success: boolean; data: Workspace[] }>('/api/v1/workspaces')
       workspaces.value = response.data
 
       // 如果还没有设置当前工作区,使用默认工作区
@@ -91,7 +115,7 @@ export function useWorkspace () {
     loading.value = true
     try {
       const response = await $fetch<{ success: boolean; data: Workspace }>(
-        '/api/workspaces',
+        '/api/v1/workspaces',
         {
           method: 'POST',
           body: data
@@ -134,7 +158,7 @@ export function useWorkspace () {
     loading.value = true
     try {
       const response = await $fetch<{ success: boolean; data: Workspace }>(
-        `/api/workspaces/${workspaceId}`,
+        `/api/v1/workspaces/${workspaceId}`,
         {
           method: 'PATCH',
           body: data
@@ -170,7 +194,7 @@ export function useWorkspace () {
   async function deleteWorkspace (workspaceId: string) {
     loading.value = true
     try {
-      await $fetch(`/api/workspaces/${workspaceId}`, {
+      await $fetch(`/api/v1/workspaces/${workspaceId}`, {
         method: 'DELETE'
       })
 
@@ -198,7 +222,7 @@ export function useWorkspace () {
     loading.value = true
     try {
       const response = await $fetch<{ success: boolean; data: Workspace }>(
-        `/api/workspaces/${workspaceId}/set-default`,
+        `/api/v1/workspaces/${workspaceId}/set-default`,
         {
           method: 'POST'
         }
@@ -245,7 +269,7 @@ export function useWorkspace () {
   async function refreshStats (workspaceId: string) {
     try {
       const response = await $fetch<{ success: boolean; data: Workspace }>(
-        `/api/workspaces/${workspaceId}`
+        `/api/v1/workspaces/${workspaceId}`
       )
 
       const index = workspaces.value.findIndex(w => w.id === workspaceId)
@@ -255,6 +279,43 @@ export function useWorkspace () {
     } catch (error) {
       console.error('Failed to refresh workspace stats:', error)
     }
+  }
+
+  /**
+   * 获取工作区成员列表
+   */
+  async function fetchMembers (workspaceId: string): Promise<{
+    members: WorkspaceMember[]
+    pendingInvitations: WorkspaceInvitation[]
+  }> {
+    const response = await $fetch<{
+      success: boolean
+      data: { members: WorkspaceMember[]; pendingInvitations: WorkspaceInvitation[] }
+    }>(`/api/v1/workspaces/${workspaceId}/members`)
+    return response.data
+  }
+
+  /**
+   * 邀请成员
+   */
+  async function inviteMember (workspaceId: string, email: string, role: 'admin' | 'member' = 'member') {
+    const response = await $fetch<{ success: boolean; data: { invitation: WorkspaceInvitation; inviteUrl: string }; message: string }>(
+      `/api/v1/workspaces/${workspaceId}/members/invite`,
+      {
+        method: 'POST',
+        body: { email, role }
+      }
+    )
+    return response
+  }
+
+  /**
+   * 移除成员
+   */
+  async function removeMember (workspaceId: string, userId: string) {
+    await $fetch(`/api/v1/workspaces/${workspaceId}/members/${userId}`, {
+      method: 'DELETE'
+    })
   }
 
   // 初始化时从 localStorage 加载
@@ -277,6 +338,9 @@ export function useWorkspace () {
     updateWorkspace,
     deleteWorkspace,
     setDefaultWorkspace,
-    refreshStats
+    refreshStats,
+    fetchMembers,
+    inviteMember,
+    removeMember
   }
 }
