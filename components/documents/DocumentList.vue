@@ -25,7 +25,7 @@
       >
         <CardContent class="p-4">
           <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3 flex-1">
+            <div class="flex items-center space-x-3 flex-1 min-w-0">
               <component :is="getFileIcon(doc.fileType)" class="w-8 h-8 text-primary flex-shrink-0" />
               <div class="flex-1 min-w-0">
                 <h4 class="font-semibold truncate">
@@ -36,7 +36,10 @@
                 </p>
               </div>
             </div>
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2 flex-shrink-0">
+              <Badge :variant="getStatusVariant(doc.processingStatus)" class="text-xs">
+                {{ $t(getStatusKey(doc.processingStatus)) }}
+              </Badge>
               <span class="text-sm text-muted-foreground">{{ formatFileSize(doc.fileSize) }}</span>
               <Button
                 variant="ghost"
@@ -93,11 +96,31 @@ function formatFileSize (bytes: number) {
 }
 
 function getOriginalFileName (doc: Document) {
-  // 优先从 metadata 获取原始文件名
   if (doc.metadata?.originalFileName) {
     return doc.metadata.originalFileName
   }
-  // 降级方案:从 filePath 提取文件名
   return doc.filePath.split('/').pop() || doc.title
+}
+
+function getStatusVariant (status?: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+  switch (status) {
+    case 'completed': return 'default'
+    case 'processing':
+    case 'pending':
+    case 'retrying': return 'secondary'
+    case 'failed': return 'destructive'
+    default: return 'outline'
+  }
+}
+
+function getStatusKey (status?: string): string {
+  switch (status) {
+    case 'completed': return 'documents.status.indexed'
+    case 'processing': return 'documents.status.processing'
+    case 'pending': return 'documents.status.pending'
+    case 'retrying': return 'documents.status.retrying'
+    case 'failed': return 'documents.status.failed'
+    default: return 'documents.status.pending'
+  }
 }
 </script>
