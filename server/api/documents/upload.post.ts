@@ -4,14 +4,10 @@
  */
 
 import { promises as fs } from 'fs'
-import { readFileSync } from 'fs'
 import { extname, join } from 'path'
 import { createHash } from 'crypto'
-import YAML from 'js-yaml'
 import { DocumentDAO } from '~/lib/db/dao/document-dao'
-import { DocumentProcessingPipeline } from '~/lib/rag/pipeline'
-import { EmbeddingServiceFactory } from '~/lib/rag/embedding-adapter'
-import { getModelManager } from '~/lib/ai/manager'
+import { processDocumentAsync } from '~/server/utils/document-processing'
 import { getStorageClient, generateObjectKey } from '~/lib/storage/storage-factory'
 import type { Document } from '~/types/document'
 
@@ -244,84 +240,3 @@ export default defineEventHandler(async (event) => {
   }
 })
 
-/**
- * 异步处理文档向量化
- */
-async function processDocumentAsync(documentId: string, content: string) {
-  console.log(`Starting async processing for document: ${documentId}`)
-
-  // 更新状态为 processing
-  await DocumentDAO.updateProcessingStatus(documentId, 'processing', {
-    startedAt: new Date()
-  })
-
-  try {
-    const runtimeConfig = useRuntimeConfig()
-    const glmApiKey = runtimeConfig.glmApiKey as string | undefined
-    const openaiApiKey = runtimeConfig.openaiApiKey as string | undefined
-
-    // 获取当前选择的模型
-    const config = {
-      anthropicApiKey: runtimeConfig.anthropicApiKey,
-      openaiApiKey: runtimeConfig.openaiApiKey,
-      googleApiKey: runtimeConfig.googleApiKey,
-      glmApiKey: runtimeConfig.glmApiKey,
-      dashscopeApiKey: runtimeConfig.dashscopeApiKey,
-      baiduApiKey: runtimeConfig.baiduApiKey,
-      deepseekApiKey: runtimeConfig.deepseekApiKey,
-      ollamaBaseUrl: runtimeConfig.ollamaBaseUrl
-    }
-    const modelManager = getModelManager(config)
-    const defaultModelId = modelManager.getDefaultModelId()
-
-    // 读取模型配置
-    const configPath = join(process.cwd(), 'config', 'ai-models.yaml')
-    const configContent = readFileSync(configPath, 'utf-8')
-    const parsed = YAML.load(configContent) as { ai_models: { models: Record<string, any> } }
-    const modelConfig = parsed.ai_models.models[defaultModelId]
-
-    if (!modelConfig) {
-      console.warn(`未找到模型 ${defaultModelId} 的配置，文档将不会被向量化`)
-      await DocumentDAO.updateProcessingStatus(documentId, 'completed', {
-        completedAt: new Date()
-      })
-      return
-    }
-
-    // 根据默认模型创建对应的 Embedding 适配器
-    const embeddingAdapter = await EmbeddingServiceFactory.createFromModelConfig(
-      modelConfig,
-      { glmApiKey, openaiApiKey }
-    )
-
-    if (embeddingAdapter) {
-      const modelInfo = embeddingAdapter.getModelInfo()
-      console.log(`使用 ${modelInfo.provider} Embedding 服务处理文档: ${modelInfo.modelId}`)
-
-      const pipeline = new DocumentProcessingPipeline({ embeddingAdapter })
-      const result = await pipeline.process(documentId, content)
-
-      // 更新为完成状态
-      await DocumentDAO.updateProcessingStatus(documentId, 'completed', {
-        chunksCount: result.chunksCreated,
-        vectorsCount: result.vectorsAdded,
-        completedAt: new Date()
-      })
-
-      console.log(`Document processing completed: ${documentId}`)
-    } else {
-      console.warn(`模型 ${defaultModelId} 不支持 Embedding，文档将不会被向量化`)
-      await DocumentDAO.updateProcessingStatus(documentId, 'completed', {
-        completedAt: new Date()
-      })
-    }
-  } catch (error) {
-    console.error(`Document processing failed for ${documentId}:`, error)
-
-    // 更新为失败状态
-    await DocumentDAO.updateProcessingStatus(documentId, 'failed', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      completedAt: new Date()
-    })
-  }
-}
