@@ -383,7 +383,10 @@
       "dragDrop": "Drag and drop files here or click to select files",
       "supportedFormats": "Supports PDF, DOCX, Markdown formats, maximum 10MB",
       "uploading": "Uploading... {progress}%",
-      "uploadFailed": "Upload failed"
+      "uploadFailed": "Upload failed",
+      "queued": "Queued, waiting for vectorization...",
+      "vectorizing": "Vectorizing...",
+      "processing": "Processing document..."
     },
     "details": {
       "title": "Document Details",
