@@ -1,18 +1,20 @@
 /**
  * POST /api/documents/batch-upload
- * 批量上传文档
+ * 批量上传文档（异步队列处理）
  *
  * 功能:
- * 1. 接收多个文件
- * 2. 并行处理上传
- * 3. 返回每个文件的处理结果
- * 4. 支持部分成功场景
+ * 1. 接收多个文件，并行验证、提取文本、上传存储
+ * 2. 为每个文件创建数据库记录（status: pending）
+ * 3. 立即返回文档 ID 列表（不等待向量化）
+ * 4. 后台异步触发向量化处理
+ * 5. 前端可通过 GET /api/documents/:id/status 轮询进度
  */
 
-import { writeFile, unlink } from 'fs/promises'
+import { writeFile, unlink, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { DocumentDAO } from '~/lib/db/dao/document-dao'
 import { getStorageClient, generateObjectKey, calculateFileHash } from '~/lib/storage/storage-factory'
+import { processDocumentAsync } from '~/server/utils/document-processing'
 import pdfParse from 'pdf-parse'
 import mammoth from 'mammoth'
 import { readFile } from 'fs/promises'
@@ -23,6 +25,7 @@ interface UploadResult {
   documentId?: string
   error?: string
   duplicate?: boolean
+  queued?: boolean
 }
 
 export default defineEventHandler(async (event) => {
@@ -40,19 +43,32 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    console.log(`收到 ${formData.length} 个文件,开始批量上传...`)
+    console.log(`[BatchUpload] Received ${formData.length} files`)
 
-    // 2. 并行处理所有文件
+    // 2. 并行处理所有文件（只做上传+建档，不做向量化）
     const results: UploadResult[] = await Promise.all(
       formData.map(file => processFile(file, userId))
     )
 
-    // 3. 统计结果
+    // 3. 对成功创建的文档触发异步向量化（fire-and-forget）
+    for (const result of results) {
+      if (result.success && result.documentId && !result.duplicate && result.queued) {
+        const doc = await DocumentDAO.findById(result.documentId)
+        if (doc?.content) {
+          processDocumentAsync(doc.id, doc.content).catch((error) => {
+            console.error(`[BatchUpload] Async processing failed for ${doc.id}:`, error)
+          })
+        }
+      }
+    }
+
+    // 4. 统计结果
     const successCount = results.filter(r => r.success).length
     const failCount = results.filter(r => !r.success).length
     const duplicateCount = results.filter(r => r.duplicate).length
+    const queuedCount = results.filter(r => r.queued).length
 
-    console.log(`批量上传完成: ${successCount} 成功, ${failCount} 失败, ${duplicateCount} 重复`)
+    console.log(`[BatchUpload] Completed: ${successCount} success, ${failCount} fail, ${duplicateCount} duplicate, ${queuedCount} queued`)
 
     return {
       success: true,
@@ -61,11 +77,16 @@ export default defineEventHandler(async (event) => {
         successCount,
         failCount,
         duplicateCount,
-        results
+        queuedCount,
+        results,
+        // 前端可用这些 ID 轮询 GET /api/documents/:id/status
+        documentIds: results
+          .filter(r => r.success && r.documentId && !r.duplicate)
+          .map(r => r.documentId!)
       }
     }
   } catch (error) {
-    console.error('Batch upload error:', error)
+    console.error('[BatchUpload] Error:', error)
 
     throw createError({
       statusCode: 500,
@@ -75,7 +96,7 @@ export default defineEventHandler(async (event) => {
 })
 
 /**
- * 处理单个文件上传
+ * 处理单个文件上传（只建档，不向量化）
  */
 async function processFile(file: any, userId: string): Promise<UploadResult> {
   const fileName = file.filename || 'unnamed'
@@ -94,10 +115,11 @@ async function processFile(file: any, userId: string): Promise<UploadResult> {
 
     // 2. 保存到临时目录（Vercel 只有 /tmp 可写）
     const tempDir = process.env.VERCEL ? '/tmp' : join(process.cwd(), 'temp')
-    tempFilePath = join(tempDir, `${Date.now()}_${fileName}`)
+    await mkdir(tempDir, { recursive: true })
+    tempFilePath = join(tempDir, `${Date.now()}_${Math.random().toString(36).slice(2)}_${fileName}`)
     await writeFile(tempFilePath, file.data)
 
-    // 3. 计算文件哈希(用于去重)
+    // 3. 计算文件哈希（用于去重）
     const fileBuffer = await readFile(tempFilePath)
     const contentHash = await calculateFileHash(fileBuffer)
 
@@ -126,7 +148,7 @@ async function processFile(file: any, userId: string): Promise<UploadResult> {
         content = await readFile(tempFilePath, 'utf-8')
       }
     } catch (error) {
-      console.error(`文本提取失败 (${fileName}):`, error)
+      console.error(`[BatchUpload] Text extraction failed (${fileName}):`, error)
       await unlink(tempFilePath)
       return {
         fileName,
@@ -140,15 +162,15 @@ async function processFile(file: any, userId: string): Promise<UploadResult> {
     const objectKey = generateObjectKey(fileName)
     const uploadResult = await storage.uploadFile(objectKey, fileBuffer, {
       'Content-Type': file.type || 'application/octet-stream',
-      'X-Original-Filename': encodeURIComponent(fileName) // URL 编码以支持中文字符
+      'X-Original-Filename': encodeURIComponent(fileName)
     })
 
-    // 7. 创建数据库记录
+    // 7. 创建数据库记录（状态为 pending，等待异步处理）
     const document = await DocumentDAO.create({
       userId,
       title: fileName,
-      filePath: `/uploads/${fileName}`, // 保留兼容性
-      fileType: fileType as 'pdf' | 'docx' | 'markdown',
+      filePath: objectKey,
+      fileType: fileType === 'md' ? 'markdown' : fileType as 'pdf' | 'docx' | 'markdown',
       fileSize: uploadResult.size,
       content,
       contentHash,
@@ -166,26 +188,18 @@ async function processFile(file: any, userId: string): Promise<UploadResult> {
     // 8. 清理临时文件
     await unlink(tempFilePath)
 
-    // 9. 触发异步向量化处理
-    // TODO: 实现异步队列处理
-    // processDocumentAsync(document.id, content)
-
     return {
       fileName,
       success: true,
-      documentId: document.id
+      documentId: document.id,
+      queued: true
     }
   } catch (error) {
-    // 清理临时文件
     if (tempFilePath) {
-      try {
-        await unlink(tempFilePath)
-      } catch {
-        // 忽略清理错误
-      }
+      try { await unlink(tempFilePath) } catch { /* ignore */ }
     }
 
-    console.error(`文件上传失败 (${fileName}):`, error)
+    console.error(`[BatchUpload] File failed (${fileName}):`, error)
     return {
       fileName,
       success: false,
