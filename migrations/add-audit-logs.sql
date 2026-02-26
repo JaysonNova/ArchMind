@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  workspace_id UUID REFERENCES workspaces(id) ON DELETE SET NULL,
+  workspace_id TEXT REFERENCES workspaces(id) ON DELETE SET NULL,
   action VARCHAR(100) NOT NULL,        -- 操作类型，如 document.download, prd.create
   resource_type VARCHAR(50),           -- 资源类型，如 document, prd, prototype
   resource_id UUID,                    -- 资源 ID
