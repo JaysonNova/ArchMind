@@ -364,9 +364,9 @@ export function getModelManager (config?: Record<string, any>): ModelManager {
   if (!managerInstance) {
     managerInstance = new ModelManager(config)
   } else if (config && Object.keys(config).length > 0) {
-    // 如果已经有实例但收到新的有效配置，重新初始化适配器
-    // 这确保了在运行时配置更新时，模型管理器能正确地重新初始化
-    managerInstance.initializeAdapters(config)
+    // 原子替换：直接创建新实例，避免 initializeAdapters 先 clear 再填充产生的中间状态
+    // 在 SSR 并发场景下，旧实例在被替换前仍可正常服务请求
+    managerInstance = new ModelManager(config)
   }
   return managerInstance
 }
