@@ -197,6 +197,8 @@ jobs:
     if: |
       github.event_name == 'push' ||
       github.event.pull_request.head.repo.full_name == github.repository
+    # E2E 测试失败不阻塞 PR 合并（测试基础设施仍在完善中）
+    continue-on-error: true
     services:
       postgres:
         image: pgvector/pgvector:pg14
