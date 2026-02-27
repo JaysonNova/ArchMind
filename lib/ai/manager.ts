@@ -124,7 +124,14 @@ export class ModelManager {
       const baseUrl = config.anthropicBaseUrl as string | undefined
       const userModels: string[] = config.anthropicModels?.length
         ? config.anthropicModels
-        : ['claude-opus-4-20250514', 'claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022']
+        : [
+          'claude-sonnet-4-6', 'claude-sonnet-4-5', 'claude-sonnet-4-20250514',
+          'claude-opus-4-6', 'claude-opus-4-6-thinking', 'claude-opus-4-5',
+          'claude-haiku-4-5', 'claude-3-5-haiku-20241022',
+          'claude-sonnet-4', 'claude-sonnet-4-5-20250929', 'claude-sonnet-4.5',
+          'claude-haiku-4-5-20251001',
+          'claude-opus-4-5-20251101', 'claude-opus-4.5'
+        ]
       for (const modelId of userModels) {
         const claude = new ClaudeAdapter(config.anthropicApiKey as string, modelId, baseUrl)
         newAdapters.set(modelId, claude)
