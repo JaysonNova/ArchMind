@@ -190,10 +190,10 @@ jobs:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
     needs: [build]
-    # 仅在有数据库 secret 配置时运行（PR 来自外部 fork 时跳过）
+    # 仅在 push 事件或内部 PR 时运行（外部 fork PR 无 secrets 权限，跳过）
     if: |
-      (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
-      && secrets.E2E_DATABASE_URL != ''
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     services:
       postgres:
         image: pgvector/pgvector:pg14
