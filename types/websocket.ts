@@ -19,7 +19,6 @@ export type WSMessageType =
   | 'ping'
   | 'pong'
   | 'error'
-  | 'auth'
   | 'auth_success'
   | 'auth_failed'
   // 工作区（客户端 → 服务端）
@@ -51,12 +50,6 @@ export interface WSErrorMessage extends WSBaseMessage {
 }
 
 // ─── 认证消息 ────────────────────────────────────────────────────────────────
-
-/** 客户端发送：携带 token 进行鉴权 */
-export interface WSAuthMessage extends WSBaseMessage {
-  type: 'auth'
-  token: string
-}
 
 export interface WSAuthSuccessMessage extends WSBaseMessage {
   type: 'auth_success'
@@ -158,7 +151,6 @@ export interface WSActivityMessage extends WSBaseMessage {
 /** 客户端可发送的所有消息类型 */
 export type WSClientMessage =
   | WSPingMessage
-  | WSAuthMessage
   | WSJoinWorkspaceMessage
   | WSLeaveWorkspaceMessage
 
