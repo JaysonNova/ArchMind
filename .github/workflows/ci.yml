@@ -235,7 +235,7 @@ jobs:
       - name: Initialize database
         run: pnpm db:init
         env:
-          DATABASE_URL: postgresql://archmind:archmind_test@localhost:5432/archmind_test
+          DATABASE_URL: postgresql://archmind:archmind_test@localhost:5432/archmind_test?sslmode=disable
 
       - name: Generate OpenAPI docs
         run: pnpm docs:api
@@ -254,7 +254,7 @@ jobs:
           echo $! > /tmp/server.pid
           echo "Server PID: $(cat /tmp/server.pid)"
         env:
-          DATABASE_URL: postgresql://archmind:archmind_test@localhost:5432/archmind_test
+          DATABASE_URL: postgresql://archmind:archmind_test@localhost:5432/archmind_test?sslmode=disable
           JWT_SECRET: e2e-test-jwt-secret-ci
           NODE_ENV: production
           PORT: 3000
