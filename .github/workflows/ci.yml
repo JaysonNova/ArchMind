@@ -249,7 +249,10 @@ jobs:
         run: tar -xzf nuxt-build.tar.gz
 
       - name: Start production server
-        run: node .output/server/index.mjs &
+        run: |
+          node .output/server/index.mjs > /tmp/server.log 2>&1 &
+          echo $! > /tmp/server.pid
+          echo "Server PID: $(cat /tmp/server.pid)"
         env:
           DATABASE_URL: postgresql://archmind:archmind_test@localhost:5432/archmind_test
           JWT_SECRET: e2e-test-jwt-secret-ci
@@ -258,8 +261,17 @@ jobs:
 
       - name: Wait for server to be ready
         run: |
-          timeout 60 bash -c 'until curl -s http://localhost:3000/api/v1/health | grep -q "ok"; do sleep 2; done'
-          echo "✓ Server is ready"
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:3000/api/v1/health | grep -q '"status":"ok"'; then
+              echo "✓ Server is ready (attempt $i)"
+              exit 0
+            fi
+            echo "Waiting... attempt $i/30"
+            sleep 2
+          done
+          echo "✗ Server failed to start. Last log:"
+          tail -50 /tmp/server.log
+          exit 1
 
       - name: Run E2E tests
         run: pnpm test:e2e
