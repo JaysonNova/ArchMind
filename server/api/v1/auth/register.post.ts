@@ -5,6 +5,8 @@
 
 import { z } from 'zod'
 import { UserDAO } from '~/lib/db/dao/user-dao'
+import { WorkspaceDAO } from '~/lib/db/dao/workspace-dao'
+import { WorkspaceMemberDAO } from '~/lib/db/dao/workspace-member-dao'
 import { hashPassword } from '~/server/utils/password'
 import { generateToken } from '~/server/utils/jwt'
 import { getStorageClient } from '~/lib/storage/storage-factory'
@@ -90,6 +92,20 @@ export default defineEventHandler(async (event): Promise<AuthResponse> => {
       passwordHash,
       fullName: validatedData.fullName
     })
+
+    // 创建个人默认工作区并加入成员表
+    try {
+      const displayName = validatedData.fullName || username
+      const workspace = await WorkspaceDAO.create({
+        name: `${displayName} 的工作区`,
+        description: '个人默认工作区',
+        icon: '🏠',
+        isDefault: false
+      })
+      await WorkspaceMemberDAO.addMember(workspace.id, user.id, 'owner')
+    } catch (wsError) {
+      console.warn('[Register] Failed to create default workspace:', wsError)
+    }
 
     // 生成默认头像（SVG 彩色字母头像）
     try {

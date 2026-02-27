@@ -33,7 +33,7 @@ export interface UpdateWorkspaceInput {
 
 export class WorkspaceDAO {
   /**
-   * 获取所有工作区
+   * 获取所有工作区（仅限内部/管理用途）
    */
   static async getAll (): Promise<Workspace[]> {
     const sql = `
@@ -41,6 +41,21 @@ export class WorkspaceDAO {
       ORDER BY is_default DESC, created_at ASC
     `
     const result = await dbClient.query<any>(sql)
+    return result.rows.map(row => this.mapRowToWorkspace(row))
+  }
+
+  /**
+   * 获取用户所属的工作区（通过 workspace_members 过滤）
+   */
+  static async getByUserId (userId: string): Promise<Workspace[]> {
+    const sql = `
+      SELECT w.*
+      FROM workspaces w
+      JOIN workspace_members wm ON wm.workspace_id = w.id
+      WHERE wm.user_id = $1
+      ORDER BY w.is_default DESC, w.created_at ASC
+    `
+    const result = await dbClient.query<any>(sql, [userId])
     return result.rows.map(row => this.mapRowToWorkspace(row))
   }
 
