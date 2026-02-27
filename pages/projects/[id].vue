@@ -51,9 +51,17 @@
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem @click="handleExport">
+                <DropdownMenuItem @click="handleExportMarkdown">
                   <Download class="w-4 h-4 mr-2" />
                   {{ $t('projects.details.actions.exportMarkdown') }}
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="handleExportWord" :disabled="isExporting">
+                  <FileType class="w-4 h-4 mr-2" />
+                  {{ $t('projects.details.actions.exportWord') }}
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="handleExportPdf">
+                  <Printer class="w-4 h-4 mr-2" />
+                  {{ $t('projects.details.actions.exportPdf') }}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem class="text-destructive" @click="handleDelete">
@@ -183,7 +191,7 @@
                         <Edit class="w-3.5 h-3.5" />
                         {{ $t('projects.details.edit') }}
                       </Button>
-                      <Button variant="ghost" size="sm" @click="handleExport" class="gap-1.5 text-xs">
+                      <Button variant="ghost" size="sm" @click="handleExportMarkdown" class="gap-1.5 text-xs">
                         <Download class="w-3.5 h-3.5" />
                         {{ $t('common.export') }}
                       </Button>
@@ -386,9 +394,9 @@
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <Switch
-                          :checked="ragEnabled"
+                          :model-value="ragEnabled"
                           :disabled="ragLoading || ragStatus === 'processing'"
-                          @update:checked="handleRagToggle"
+                          @update:model-value="handleRagToggle"
                         />
                         <span class="text-sm font-medium">
                           {{ ragEnabled ? $t('projects.details.ragEnabled') : $t('projects.details.ragDisabled') }}
@@ -478,10 +486,12 @@
 
 <script setup lang="ts">
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import {
   ArrowLeft, MoreVertical, Download, Trash2, MessageSquarePlus,
   FileText, MessageCircle, Layout, BookOpen, Calendar, Info,
-  ChevronDown, User, Sparkles, Maximize2, Edit, Brain, Loader2
+  ChevronDown, User, Sparkles, Maximize2, Edit, Brain, Loader2,
+  FileType, Printer
 } from 'lucide-vue-next'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
@@ -521,6 +531,7 @@ const prd = ref<any>(null)
 const references = ref<any[]>([])
 const conversationMessages = ref<any[]>([])
 const isLoading = ref(true)
+const isExporting = ref(false)
 const prdExpanded = ref(false)
 const showAllMessages = ref(false)
 const deleteDialogOpen = ref(false)
@@ -542,9 +553,9 @@ onMounted(async () => {
   try {
     // Load PRD details, conversation history, and prototype data in parallel
     const [prdResponse, conversationResult, prototypeResult] = await Promise.allSettled([
-      $fetch<{ data: any }>(`/api/prd/${prdId}`),
-      $fetch<{ success: boolean; data: any }>(`/api/conversations/${prdId}`),
-      $fetch<{ success: boolean; data: any }>('/api/prototypes', { params: { prdId } })
+      $fetch<{ data: any }>(`/api/v1/prd/${prdId}`),
+      $fetch<{ success: boolean; data: any }>(`/api/v1/conversations/${prdId}`),
+      $fetch<{ success: boolean; data: any }>('/api/v1/prototypes', { params: { prdId } })
     ])
 
     if (prdResponse.status === 'fulfilled') {
@@ -563,7 +574,7 @@ onMounted(async () => {
         // Load prototype pages
         try {
           const pagesResponse = await $fetch<{ success: boolean; data: any }>(
-            `/api/prototypes/${prototypes[0].id}`
+            `/api/v1/prototypes/${prototypes[0].id}`
           )
           if (pagesResponse.success) {
             prototypePages.value = pagesResponse.data.pages || []
@@ -588,7 +599,14 @@ onMounted(async () => {
 
 const renderedContent = computed(() => {
   if (!prd.value?.content) return ''
-  return marked(prd.value.content)
+  const rawHtml = marked(prd.value.content) as string
+  if (!import.meta.client) return rawHtml
+  return DOMPurify.sanitize(rawHtml, {
+    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li',
+      'strong', 'em', 'code', 'pre', 'blockquote', 'table', 'thead',
+      'tbody', 'tr', 'th', 'td', 'a', 'hr', 'mark'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'class']
+  })
 })
 
 const contentWordCount = computed(() => {
@@ -652,7 +670,7 @@ function viewDocument (documentId: string) {
   router.push(`/documents/${documentId}`)
 }
 
-async function handleExport () {
+async function handleExportMarkdown () {
   if (!prd.value) return
 
   const blob = new Blob([prd.value.content], { type: 'text/markdown' })
@@ -664,13 +682,52 @@ async function handleExport () {
   URL.revokeObjectURL(url)
 }
 
+async function handleExportWord () {
+  if (!prd.value || isExporting.value) return
+
+  isExporting.value = true
+  try {
+    const blob = await $fetch<Blob>(`/api/v1/prd/${prdId}/export`, {
+      query: { format: 'docx' },
+      responseType: 'blob'
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const dateStr = new Date().toISOString().slice(0, 10)
+    const safeTitle = prd.value.title.replace(/[/\\:*?"<>|]/g, '').trim().slice(0, 50)
+    a.download = `PRD-${safeTitle}-${dateStr}.docx`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast({
+      title: t('projects.details.actions.exportWord'),
+      description: `${prd.value.title}.docx`,
+      variant: 'success'
+    })
+  } catch (error) {
+    console.error('Export Word failed:', error)
+    toast({
+      title: t('common.error'),
+      description: t('projects.details.actions.exportFailed'),
+      variant: 'destructive'
+    })
+  } finally {
+    isExporting.value = false
+  }
+}
+
+function handleExportPdf () {
+  if (!prd.value) return
+  window.print()
+}
+
 function handleDelete () {
   deleteDialogOpen.value = true
 }
 
 async function confirmDelete () {
   try {
-    await $fetch(`/api/prd/${prdId}`, { method: 'DELETE' })
+    await $fetch(`/api/v1/prd/${prdId}`, { method: 'DELETE' })
     toast({
       title: t('projects.deleteSuccess'),
       description: t('projects.deleteSuccessDescription'),
@@ -718,15 +775,15 @@ async function handleRagToggle (enabled: boolean) {
       if (prd.value) {
         prd.value = {
           ...prd.value,
-          metadata: { ...(prd.value.metadata || {}), ragEnabled: false, ragStatus: 'processing' }
+          metadata: { ...(prd.value.metadata || {}), ragEnabled: true, ragStatus: 'processing' }
         }
       }
-      await $fetch(`/api/prd/${prdId}/vectorize`, { method: 'POST' })
+      await $fetch(`/api/v1/prd/${prdId}/vectorize`, { method: 'POST' })
       // 服务端后台处理，轮询状态直到完成
       pollRagStatus()
       toast({ title: t('projects.details.ragEnableSuccess') })
     } else {
-      await $fetch(`/api/prd/${prdId}/vectorize`, { method: 'DELETE' })
+      await $fetch(`/api/v1/prd/${prdId}/vectorize`, { method: 'DELETE' })
       if (prd.value) {
         prd.value = {
           ...prd.value,
@@ -759,7 +816,7 @@ function pollRagStatus () {
   if (ragPollTimer) clearTimeout(ragPollTimer)
   ragPollTimer = setTimeout(async () => {
     try {
-      const res = await $fetch<{ data: any }>(`/api/prd/${prdId}`)
+      const res = await $fetch<{ data: any }>(`/api/v1/prd/${prdId}`)
       if (res.data) {
         prd.value = res.data
       }

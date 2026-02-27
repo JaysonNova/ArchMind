@@ -98,6 +98,7 @@
     "knowledgeBase": "知识库",
     "logicModels": "逻辑模型",
     "newProject": "新建项目",
+    "designDoc": "设计方案",
     "collapse": "收起侧边栏",
     "expand": "展开侧边栏"
   },
@@ -277,11 +278,13 @@
     "create": "创建",
     "error": "错误",
     "success": "成功",
+    "saved": "已保存",
     "saveSuccess": "保存成功",
     "saveFailed": "保存失败",
     "noData": "暂无数据",
     "comingSoon": "敬请期待",
     "back": "返回",
+    "backHome": "返回首页",
     "view": "查看",
     "download": "下载",
     "optional": "可选",
@@ -289,6 +292,8 @@
     "duplicate": "复制",
     "open": "打开",
     "inProgress": "进行中",
+    "copy": "复制",
+    "copied": "已复制",
     "copiedToClipboard": "已复制到剪贴板",
     "copyFailed": "复制失败",
     "lastEdited": "最后编辑",
@@ -301,6 +306,9 @@
     "noProjects": "暂无项目",
     "noProjectsHint": "创建你的第一个项目开始吧",
     "tryDifferentSearch": "尝试不同的搜索词",
+    "searching": "搜索中...",
+    "conversationSearchResults": "找到 {count} 条相关对话历史",
+    "messageCount": "{count} 条消息",
     "newProject": "新建项目",
     "loadFailed": "加载项目失败",
     "deleteConfirm": "确定要删除这个项目吗?",
@@ -361,6 +369,9 @@
       "actions": {
         "edit": "编辑",
         "exportMarkdown": "导出 Markdown",
+        "exportWord": "导出 Word (.docx)",
+        "exportPdf": "打印为 PDF",
+        "exportFailed": "导出失败，请重试",
         "delete": "删除"
       }
     },
@@ -482,7 +493,12 @@
       "dragDrop": "拖拽文件到此处或点击选择文件",
       "supportedFormats": "支持 PDF, DOCX, Markdown 格式,最大 10MB",
       "uploading": "上传中... {progress}%",
-      "uploadFailed": "上传失败"
+      "uploadFailed": "上传失败",
+      "queued": "已加入队列，等待向量化处理...",
+      "vectorizing": "向量化处理中...",
+      "processing": "文档处理中...",
+      "successTitle": "上传成功",
+      "successDesc": "文档已上传，正在后台进行索引处理"
     },
     "details": {
       "title": "文档详情",
@@ -515,6 +531,13 @@
         "reindex": "重新索引",
         "delete": "删除"
       }
+    },
+    "status": {
+      "indexed": "已索引",
+      "processing": "索引中",
+      "pending": "待索引",
+      "retrying": "重试中",
+      "failed": "索引失败"
     }
   },
   "settings": {
@@ -593,6 +616,7 @@
       "name": "名称",
       "type": "类型",
       "source": "来源",
+      "indexStatus": "索引状态",
       "lastSync": "最后同步",
       "size": "大小"
     },
@@ -782,6 +806,44 @@
       "generateFailed": "图片生成失败"
     }
   },
+  "designDoc": {
+    "title": "设计方案",
+    "description": "从飞书文档自动生成前端开发设计方案",
+    "generate": "生成方案",
+    "viewList": "查看列表",
+    "generateTitle": "生成前端设计方案",
+    "generateDescription": "输入飞书产品原型文档链接，AI 将分析文档内容并生成结构化的前端开发设计方案",
+    "feishuUrl": "飞书文档链接",
+    "feishuUrlPlaceholder": "粘贴飞书文档链接，如 https://xxx.feishu.cn/docx/...",
+    "validate": "验证",
+    "validating": "验证中",
+    "validated": "已验证",
+    "customTemplate": "自定义模板",
+    "uploadTemplate": "上传模板",
+    "templateUploaded": "已上传模板",
+    "templateHint": "上传 Markdown 格式的设计方案模板（可选），未上传则使用默认模板",
+    "templateInfo": "已加载自定义模板（{sections} 个章节）",
+    "selectModel": "AI 模型",
+    "selectModelPlaceholder": "选择生成模型",
+    "additionalContext": "补充说明",
+    "additionalContextPlaceholder": "补充技术栈、项目约束等信息（可选）",
+    "generateBtn": "开始生成设计方案",
+    "generating": "正在生成...",
+    "generatingHint": "AI 正在分析文档并生成设计方案，请稍候...",
+    "generateSuccess": "设计方案生成完成",
+    "generateFailed": "生成失败",
+    "preview": "方案预览",
+    "edit": "编辑",
+    "editPlaceholder": "在此编辑 Markdown 内容...",
+    "noContent": "暂无内容",
+    "empty": "暂无设计方案",
+    "emptyHint": "点击「生成方案」从飞书文档创建你的第一个前端设计方案",
+    "sourceDoc": "源文档",
+    "deleteConfirm": "确定删除此设计方案？",
+    "deleteConfirmDesc": "此操作无法撤销，设计方案将被永久删除。",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败"
+  },
   "workspace": {
     "select": "选择工作区",
     "switchWorkspace": "切换工作区",
@@ -830,7 +892,47 @@
     "yes": "是",
     "no": "否",
     "documentCount": "文档数量",
-    "prdCount": "PRD 数量"
+    "prdCount": "PRD 数量",
+    "tab": {
+      "workspaces": "工作区",
+      "members": "成员管理"
+    },
+    "members": {
+      "inviteTitle": "邀请新成员",
+      "emailPlaceholder": "输入邮箱地址",
+      "roleMember": "普通成员",
+      "roleAdmin": "管理员",
+      "roleOwner": "所有者",
+      "invite": "发送邀请",
+      "memberList": "当前成员",
+      "noMembers": "暂无成员",
+      "pendingInvitations": "待接受邀请",
+      "pending": "待接受",
+      "removeSuccess": "成员已移除",
+      "removeError": "移除成员失败",
+      "inviteSuccess": "邀请已发送",
+      "inviteError": "发送邀请失败"
+    },
+    "invitation": {
+      "loading": "正在加载邀请信息...",
+      "title": "工作区邀请",
+      "invitedYouTo": "邀请您加入工作区",
+      "workspace": "工作区",
+      "role": "角色",
+      "roleAdmin": "管理员",
+      "roleMember": "普通成员",
+      "expiresAt": "有效期至",
+      "loginRequired": "请先登录后再接受邀请",
+      "accept": "接受邀请",
+      "decline": "暂不加入",
+      "invalidTitle": "邀请链接无效",
+      "invalidLink": "邀请链接无效或已失效",
+      "acceptSuccess": "成功加入工作区",
+      "acceptError": "接受邀请失败",
+      "acceptedTitle": "已成功加入",
+      "acceptedDescription": "您已成功加入工作区 {workspace}",
+      "goToWorkspace": "进入工作区"
+    }
   },
   "defaults": {
     "untitledProject": "未命名项目",

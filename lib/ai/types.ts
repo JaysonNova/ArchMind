@@ -30,6 +30,7 @@ export interface AIModelAdapter {
   name: string;
   provider: string;
   modelId: string;
+  lastStopReason?: string;
 
   generateText(prompt: string, options?: GenerateOptions): Promise<string>;
   generateStream(prompt: string, options?: GenerateOptions): AsyncGenerator<string>;

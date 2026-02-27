@@ -284,6 +284,39 @@ export const prototypeVersions = pgTable('prototype_versions', {
 }))
 
 // ============================================
+// 工作区成员表
+// ============================================
+export const workspaceMembers = pgTable('workspace_members', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  role: varchar('role', { length: 20 }).default('member').notNull(),
+  joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  workspaceIdIdx: index('idx_workspace_members_workspace').on(table.workspaceId),
+  userIdIdx: index('idx_workspace_members_user').on(table.userId),
+  uniqueMember: uniqueIndex('unique_workspace_member').on(table.workspaceId, table.userId)
+}))
+
+// ============================================
+// 工作区邀请表
+// ============================================
+export const workspaceInvitations = pgTable('workspace_invitations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+  inviterId: uuid('inviter_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  role: varchar('role', { length: 20 }).default('member').notNull(),
+  token: varchar('token', { length: 255 }).notNull(),
+  status: varchar('status', { length: 20 }).default('pending').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  tokenIdx: uniqueIndex('idx_workspace_invitations_token').on(table.token),
+  workspaceIdIdx: index('idx_workspace_invitations_workspace').on(table.workspaceId)
+}))
+
+// ============================================
 // 资源表
 // ============================================
 export const assets = pgTable('assets', {
@@ -323,6 +356,33 @@ export const assets = pgTable('assets', {
   sourceIdx: index('idx_assets_source').on(table.source),
   createdAtIdx: index('idx_assets_created_at').on(table.createdAt),
   hashIdx: index('idx_assets_content_hash').on(table.contentHash)
+}))
+
+// ============================================
+// 前端设计方案表
+// ============================================
+export const designDocuments = pgTable('design_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  workspaceId: text('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  feishuUrl: text('feishu_url'),
+  feishuDocTitle: varchar('feishu_doc_title', { length: 500 }),
+  feishuDocContent: text('feishu_doc_content'),
+  content: text('content').notNull(),
+  modelUsed: varchar('model_used', { length: 100 }),
+  generationTime: integer('generation_time'),
+  tokenCount: integer('token_count'),
+  estimatedCost: decimal('estimated_cost', { precision: 10, scale: 6 }),
+  status: varchar('status', { length: 20 }).default('draft'),
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  userIdIdx: index('idx_design_docs_user_id').on(table.userId),
+  workspaceIdIdx: index('idx_design_docs_workspace_id').on(table.workspaceId),
+  createdAtIdx: index('idx_design_docs_created_at').on(table.createdAt),
+  statusIdx: index('idx_design_docs_status').on(table.status)
 }))
 
 // ============================================
