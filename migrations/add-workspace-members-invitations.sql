@@ -4,7 +4,7 @@
 -- workspace_members 表（与 docker/init-db.sql 保持同步）
 CREATE TABLE IF NOT EXISTS workspace_members (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE NOT NULL,
+  workspace_id TEXT REFERENCES workspaces(id) ON DELETE CASCADE NOT NULL,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   role VARCHAR(20) DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')),
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS workspace_members (
 -- workspace_invitations 表（新增）
 CREATE TABLE IF NOT EXISTS workspace_invitations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE NOT NULL,
+  workspace_id TEXT REFERENCES workspaces(id) ON DELETE CASCADE NOT NULL,
   inviter_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   email VARCHAR(255) NOT NULL,
   role VARCHAR(20) DEFAULT 'member' CHECK (role IN ('admin', 'member')),
