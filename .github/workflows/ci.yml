@@ -178,11 +178,14 @@ jobs:
           test -d .output && echo "✓ .output directory exists" || (echo "✗ Build failed: .output not found" && exit 1)
           test -f .output/server/index.mjs && echo "✓ server entry point exists" || (echo "✗ Build failed: server entry not found" && exit 1)
 
+      - name: Package build output
+        run: tar -czf nuxt-build.tar.gz .output/
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: nuxt-build-${{ github.sha }}
-          path: .output/
+          path: nuxt-build.tar.gz
           retention-days: 3
 
   # ─── E2E 测试（仅 develop/main push + PostgreSQL 可用时）────────────────────
@@ -241,7 +244,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: nuxt-build-${{ github.sha }}
-          path: .output/
+
+      - name: Extract build output
+        run: tar -xzf nuxt-build.tar.gz
 
       - name: Start production server
         run: node .output/server/index.mjs &
