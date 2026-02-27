@@ -21,6 +21,7 @@ on:
       - 'CHANGELOG.md'
       - 'CONTRIBUTING.md'
       - 'LICENSE'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -217,4 +218,4 @@ jobs:
         run: |
           echo "## Vercel Deployment" >> $GITHUB_STEP_SUMMARY
           echo "Production deployment completed via Vercel CLI after all CI checks passed." >> $GITHUB_STEP_SUMMARY
-          echo "URL: https://arch-mind.vercel.app" >> $GITHUB_STEP_SUMMARY
+          echo "URL: https://archmind-ai.vercel.app" >> $GITHUB_STEP_SUMMARY
