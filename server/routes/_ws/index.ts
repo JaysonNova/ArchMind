@@ -3,8 +3,8 @@
  * 路由：ws://<host>/_ws
  *
  * 协议流程：
- * 1. 客户端连接后必须在 10s 内发送 { type: 'auth', token: '<jwt>' }
- * 2. 鉴权成功后可发送 join_workspace / leave_workspace / ping
+ * 1. 连接建立时服务端从 HTTP 升级请求的 Cookie 中读取 JWT 完成鉴权
+ * 2. 鉴权成功后客户端可发送 join_workspace / leave_workspace / ping
  * 3. 服务端通过 peer.publish() 广播工作区事件（presence / comment / activity）
  */
 
@@ -19,14 +19,9 @@ import type {
   WSPresenceUser
 } from '~/types/websocket'
 
-/** 未鉴权连接的超时时间（毫秒） */
-const AUTH_TIMEOUT_MS = 10_000
-
 /** 心跳超时时间（毫秒）：超过此时间无心跳则断开 */
 const HEARTBEAT_TIMEOUT_MS = 60_000
 
-/** 鉴权超时计时器 Map：peerId → timer */
-const authTimers = new Map<string, ReturnType<typeof setTimeout>>()
 /** 心跳超时计时器 Map：peerId → timer */
 const heartbeatTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
@@ -57,6 +52,13 @@ function resetHeartbeatTimer(peer: Peer): void {
   }, HEARTBEAT_TIMEOUT_MS))
 }
 
+/** 从 WebSocket 升级请求的 Cookie 头中提取 auth_token */
+function extractTokenFromCookie(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null
+  const match = cookieHeader.match(/(?:^|;\s*)auth_token=([^;]+)/)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 /** 查询用户基本信息（用于 Presence） */
 async function fetchUserInfo(userId: string): Promise<{ username: string; avatar?: string } | null> {
   try {
@@ -78,21 +80,50 @@ async function fetchUserInfo(userId: string): Promise<{ username: string; avatar
 
 export default defineWebSocketHandler({
   /**
-   * 新连接建立：启动鉴权超时计时器
+   * 新连接建立：从 HTTP 升级请求的 Cookie 中读取 JWT 完成鉴权
+   * 避免通过 JS 消息传递 token（HttpOnly cookie 无法被 JS 读取）
    */
-  open(peer) {
+  async open(peer) {
     const peerId: string = peer.id
     console.info(`[WS] 新连接: ${peerId}`)
 
-    // 10 秒内未完成鉴权则强制断开
-    authTimers.set(peerId, setTimeout(() => {
-      sendError(peer, 'AUTH_TIMEOUT', '未在规定时间内完成鉴权')
-      peer.close(1008, 'Auth timeout')
-    }, AUTH_TIMEOUT_MS))
+    // 从升级请求的 Cookie header 中提取 JWT
+    const cookieHeader = peer.request?.headers?.get('cookie') ?? null
+    const token = extractTokenFromCookie(cookieHeader)
+
+    if (!token) {
+      sendError(peer, 'UNAUTHORIZED', '未提供认证 Cookie，请先登录')
+      peer.close(1008, 'No auth token')
+      return
+    }
+
+    const payload = verifyToken(token)
+    if (!payload) {
+      sendError(peer, 'UNAUTHORIZED', 'Token 无效或已过期，请重新登录')
+      peer.close(1008, 'Invalid token')
+      return
+    }
+
+    const userInfo = await fetchUserInfo(payload.userId)
+    if (!userInfo) {
+      sendError(peer, 'UNAUTHORIZED', '用户不存在')
+      peer.close(1008, 'User not found')
+      return
+    }
+
+    wsConnectionManager.bindUser(peerId, {
+      userId: payload.userId,
+      username: userInfo.username,
+      avatar: userInfo.avatar
+    })
+
+    send(peer, { type: 'auth_success', userId: payload.userId, timestamp: Date.now() })
+    resetHeartbeatTimer(peer)
+    console.info(`[WS] 鉴权成功: userId=${payload.userId}, peerId=${peerId}`)
   },
 
   /**
-   * 收到消息：按 type 分发处理
+   * 收到消息：按 type 分发处理（连接建立时已完成鉴权，无需 auth 消息）
    */
   async message(peer, raw) {
     const peerId: string = peer.id
@@ -106,40 +137,10 @@ export default defineWebSocketHandler({
       return
     }
 
-    // ── 鉴权消息：唯一允许在鉴权前处理的消息 ──
-    if (msg.type === 'auth') {
-      clearTimer(authTimers, peerId)
-
-      const payload = verifyToken(msg.token)
-      if (!payload) {
-        send(peer, { type: 'auth_failed', message: 'Token 无效或已过期', timestamp: Date.now() })
-        peer.close(1008, 'Invalid token')
-        return
-      }
-
-      const userInfo = await fetchUserInfo(payload.userId)
-      if (!userInfo) {
-        send(peer, { type: 'auth_failed', message: '用户不存在', timestamp: Date.now() })
-        peer.close(1008, 'User not found')
-        return
-      }
-
-      wsConnectionManager.bindUser(peerId, {
-        userId: payload.userId,
-        username: userInfo.username,
-        avatar: userInfo.avatar
-      })
-
-      send(peer, { type: 'auth_success', userId: payload.userId, timestamp: Date.now() })
-      resetHeartbeatTimer(peer)
-      console.info(`[WS] 鉴权成功: userId=${payload.userId}, peerId=${peerId}`)
-      return
-    }
-
-    // ── 其他消息需先鉴权 ──
+    // 所有消息都需要已鉴权
     const meta = wsConnectionManager.getPeerMeta(peerId)
     if (!meta) {
-      sendError(peer, 'UNAUTHORIZED', '请先完成鉴权（发送 auth 消息）')
+      sendError(peer, 'UNAUTHORIZED', '连接未鉴权，请重新建立连接')
       return
     }
 
@@ -237,7 +238,6 @@ export default defineWebSocketHandler({
    */
   close(peer) {
     const peerId: string = peer.id
-    clearTimer(authTimers, peerId)
     clearTimer(heartbeatTimers, peerId)
 
     const removed = wsConnectionManager.removePeer(peerId)
@@ -268,7 +268,6 @@ export default defineWebSocketHandler({
    */
   error(peer, error) {
     const peerId: string = peer.id
-    clearTimer(authTimers, peerId)
     clearTimer(heartbeatTimers, peerId)
     console.error(`[WS] 连接错误: peerId=${peerId}`, error)
   }

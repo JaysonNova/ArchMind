@@ -2,7 +2,7 @@
  * useWebSocket — WebSocket 客户端 Composable
  *
  * 功能：
- * - 自动从 cookie 获取 JWT 完成鉴权
+ * - 服务端在连接建立时自动从 HttpOnly Cookie 中读取 JWT 完成鉴权
  * - 指数退避自动重连
  * - 工作区订阅管理
  * - 类型安全的消息订阅/发布
@@ -19,7 +19,7 @@ import { useAuthStore } from '~/stores/auth'
 
 // ─── 类型定义 ────────────────────────────────────────────────────────────────
 
-export type WSConnectionStatus = 'disconnected' | 'connecting' | 'authenticating' | 'connected' | 'error'
+export type WSConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 
 type MessageHandler<T extends WSServerMessage = WSServerMessage> = (msg: T) => void
 
@@ -53,12 +53,6 @@ function getWsUrl(): string {
   const url = new URL(base)
   const proto = url.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${proto}//${url.host}/_ws`
-}
-
-function getAuthToken(): string | null {
-  // 从 cookie 中读取 JWT（auth_token）
-  const match = document.cookie.match(/(?:^|;\s*)auth_token=([^;]+)/)
-  return match ? decodeURIComponent(match[1]) : null
 }
 
 function dispatch(msg: WSServerMessage): void {
@@ -122,14 +116,15 @@ function connect(): void {
   ws = new WebSocket(url)
 
   ws.onopen = () => {
-    status.value = 'authenticating'
-    const token = getAuthToken()
-    if (!token) {
-      console.error('[WS] 未找到 auth_token，无法鉴权')
-      ws?.close(1008, 'No auth token')
-      return
+    // 服务端在连接建立时已通过 Cookie 完成鉴权，连接即为已认证状态
+    status.value = 'connected'
+    reconnectAttempts.value = 0
+    startPing()
+    // 重新加入之前订阅的工作区
+    for (const workspaceId of joinedWorkspaces) {
+      sendRaw({ type: 'join_workspace', workspaceId, timestamp: Date.now() })
     }
-    sendRaw({ type: 'auth', token, timestamp: Date.now() })
+    console.info('[WS] 连接已建立（服务端已完成鉴权）')
   }
 
   ws.onmessage = (event: MessageEvent) => {
@@ -141,17 +136,8 @@ function connect(): void {
       return
     }
 
-    // 鉴权成功：恢复工作区订阅
-    if (msg.type === 'auth_success') {
-      status.value = 'connected'
-      reconnectAttempts.value = 0
-      startPing()
-      // 重新加入之前订阅的工作区
-      for (const workspaceId of joinedWorkspaces) {
-        sendRaw({ type: 'join_workspace', workspaceId, timestamp: Date.now() })
-      }
-      console.info('[WS] 鉴权成功')
-    } else if (msg.type === 'auth_failed') {
+    // 鉴权失败（服务端关闭连接时可能推送此消息）
+    if (msg.type === 'auth_failed') {
       status.value = 'error'
       console.error('[WS] 鉴权失败:', msg.message)
     }
@@ -194,7 +180,7 @@ export function useWebSocket() {
   const authStore = useAuthStore()
 
   const isConnected = computed(() => status.value === 'connected')
-  const isConnecting = computed(() => status.value === 'connecting' || status.value === 'authenticating')
+  const isConnecting = computed(() => status.value === 'connecting')
 
   /**
    * 初始化并建立 WebSocket 连接（幂等，多次调用安全）

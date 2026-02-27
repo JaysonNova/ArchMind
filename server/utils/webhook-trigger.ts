@@ -82,12 +82,13 @@ async function deliverWebhook (
     const response = await fetch(url, {
       method: 'POST',
       headers: {
+        // 自定义 header 放在前面，系统安全 header 放在后面确保不被覆盖
+        ...customHeaders,
         'Content-Type': 'application/json',
         'User-Agent': 'ArchMind-Webhook/1.0',
         'X-ArchMind-Event': event,
         'X-ArchMind-Signature': `sha256=${signature}`,
-        'X-ArchMind-Timestamp': new Date().toISOString(),
-        ...customHeaders
+        'X-ArchMind-Timestamp': new Date().toISOString()
       },
       body: bodyStr,
       signal: controller.signal
