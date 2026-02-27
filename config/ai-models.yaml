@@ -97,12 +97,69 @@ ai_models:
         model: "embedding-3"
         dimensions: 2048
 
-    # Claude 3.5 Sonnet
-    claude-3.5-sonnet:
-      enabled: false
-      name: "Claude 3.5 Sonnet"
+    # ── Anthropic Claude 系列（通过中转站全部可用）──
+
+    # Haiku 系列
+    claude-3-5-haiku-20241022:
+      enabled: true
+      name: "Claude 3.5 Haiku"
       provider: "Anthropic"
-      description: "企业级推理能力，支持 200K 上下文，最适合复杂逻辑分析"
+      description: "轻量快速，适合简单任务和高频调用"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.001/1K tokens"
+        output: "¥0.005/1K tokens"
+      embedding:
+        supported: false
+
+    claude-haiku-4-5:
+      enabled: true
+      name: "Claude Haiku 4.5"
+      provider: "Anthropic"
+      description: "新一代轻量模型，性能大幅提升"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.001/1K tokens"
+        output: "¥0.005/1K tokens"
+      embedding:
+        supported: false
+
+    claude-haiku-4-5-20251001:
+      enabled: true
+      name: "Claude Haiku 4.5 (20251001)"
+      provider: "Anthropic"
+      description: "Haiku 4.5 固定版本"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.001/1K tokens"
+        output: "¥0.005/1K tokens"
+      embedding:
+        supported: false
+
+    # Sonnet 系列
+    claude-sonnet-4-20250514:
+      enabled: true
+      name: "Claude Sonnet 4"
+      provider: "Anthropic"
+      description: "均衡性能，适合大多数任务场景"
       api_key_env: "ANTHROPIC_API_KEY"
       capabilities:
         maxContextLength: 200000
@@ -113,6 +170,187 @@ ai_models:
       costEstimate:
         input: "¥0.003/1K tokens"
         output: "¥0.015/1K tokens"
+      embedding:
+        supported: false
+
+    claude-sonnet-4:
+      enabled: true
+      name: "Claude Sonnet 4 (alias)"
+      provider: "Anthropic"
+      description: "Sonnet 4 别名，自动指向最新版本"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.003/1K tokens"
+        output: "¥0.015/1K tokens"
+      embedding:
+        supported: false
+
+    claude-sonnet-4-5-20250929:
+      enabled: true
+      name: "Claude Sonnet 4.5 (20250929)"
+      provider: "Anthropic"
+      description: "Sonnet 4.5 固定版本"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.003/1K tokens"
+        output: "¥0.015/1K tokens"
+      embedding:
+        supported: false
+
+    claude-sonnet-4-5:
+      enabled: true
+      name: "Claude Sonnet 4.5"
+      provider: "Anthropic"
+      description: "最新 Sonnet，推理和创意能力大幅增强"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.003/1K tokens"
+        output: "¥0.015/1K tokens"
+      embedding:
+        supported: false
+
+    claude-sonnet-4.5:
+      enabled: true
+      name: "Claude Sonnet 4.5 (dot alias)"
+      provider: "Anthropic"
+      description: "Sonnet 4.5 点号别名"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.003/1K tokens"
+        output: "¥0.015/1K tokens"
+      embedding:
+        supported: false
+
+    claude-sonnet-4-6:
+      enabled: true
+      name: "Claude Sonnet 4.6"
+      provider: "Anthropic"
+      description: "最新迭代 Sonnet，速度最快，性价比极高"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.003/1K tokens"
+        output: "¥0.015/1K tokens"
+      embedding:
+        supported: false
+
+    # Opus 系列
+    claude-opus-4-5-20251101:
+      enabled: true
+      name: "Claude Opus 4.5 (20251101)"
+      provider: "Anthropic"
+      description: "Opus 4.5 固定版本"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.015/1K tokens"
+        output: "¥0.075/1K tokens"
+      embedding:
+        supported: false
+
+    claude-opus-4-5:
+      enabled: true
+      name: "Claude Opus 4.5"
+      provider: "Anthropic"
+      description: "旗舰级推理能力，适合复杂分析和高质量内容生成"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.015/1K tokens"
+        output: "¥0.075/1K tokens"
+      embedding:
+        supported: false
+
+    claude-opus-4.5:
+      enabled: true
+      name: "Claude Opus 4.5 (dot alias)"
+      provider: "Anthropic"
+      description: "Opus 4.5 点号别名"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.015/1K tokens"
+        output: "¥0.075/1K tokens"
+      embedding:
+        supported: false
+
+    claude-opus-4-6:
+      enabled: true
+      name: "Claude Opus 4.6"
+      provider: "Anthropic"
+      description: "最新旗舰模型，顶级推理和代码能力"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.015/1K tokens"
+        output: "¥0.075/1K tokens"
+      embedding:
+        supported: false
+
+    claude-opus-4-6-thinking:
+      enabled: true
+      name: "Claude Opus 4.6 Thinking"
+      provider: "Anthropic"
+      description: "带扩展思考的旗舰模型，适合最复杂的推理任务"
+      api_key_env: "ANTHROPIC_API_KEY"
+      capabilities:
+        maxContextLength: 200000
+        supportsStreaming: true
+        supportsStructuredOutput: true
+        supportsVision: true
+        supportedLanguages: ["zh", "en", "ja", "es", "fr", "de"]
+      costEstimate:
+        input: "¥0.015/1K tokens"
+        output: "¥0.075/1K tokens"
       embedding:
         supported: false
 

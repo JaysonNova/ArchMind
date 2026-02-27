@@ -139,7 +139,11 @@ export class VectorDAO {
   ): Promise<string[]> {
     if (chunks.length === 0) return []
 
-    const vtype = vecType(chunks[0].dimensions)
+    const dimensions = chunks[0].dimensions
+    if (chunks.some(c => c.dimensions !== dimensions)) {
+      throw new Error('All chunks in a batch must have the same embedding dimensions')
+    }
+    const vtype = vecType(dimensions)
 
     const values = chunks.map((_, i) => {
       const base = i * 5
@@ -352,8 +356,14 @@ export class VectorDAO {
       `
     }
 
-    const result = await dbClient.query<{ count: string }>(sql, params)
-    return parseInt(result.rows[0].count, 10)
+    try {
+      const result = await dbClient.query<{ count: string }>(sql, params)
+      return parseInt(result.rows[0].count, 10)
+    } catch (err: any) {
+      // 表不存在时（如数据库迁移未执行）优雅降级返回 0
+      if (err.code === '42P01') return 0
+      throw err
+    }
   }
 
   /**

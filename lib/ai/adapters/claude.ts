@@ -10,6 +10,7 @@ export class ClaudeAdapter implements AIModelAdapter {
   name = 'Claude'
   provider = 'anthropic'
   modelId: string
+  lastStopReason: string = ''
   private client: Anthropic
 
   constructor (apiKey: string, modelId: string = 'claude-3-5-sonnet-20241022', baseUrl?: string) {
@@ -40,12 +41,14 @@ export class ClaudeAdapter implements AIModelAdapter {
     const { systemPrompt, messages } = this.buildClaudeParams(prompt, options)
     const message = await this.client.messages.create({
       model: this.modelId,
-      max_tokens: options?.maxTokens || 8192,
+      max_tokens: options?.maxTokens || 16384,
       system: systemPrompt,
       messages,
       temperature: options?.temperature,
       top_p: options?.topP
     })
+
+    this.lastStopReason = message.stop_reason || ''
 
     const textContent = message.content.find(block => block.type === 'text')
     if (!textContent || textContent.type !== 'text') {
@@ -57,9 +60,9 @@ export class ClaudeAdapter implements AIModelAdapter {
 
   async *generateStream (prompt: string, options?: GenerateOptions): AsyncGenerator<string> {
     const { systemPrompt, messages } = this.buildClaudeParams(prompt, options)
-    const stream = await this.client.messages.stream({
+    const stream = this.client.messages.stream({
       model: this.modelId,
-      max_tokens: options?.maxTokens || 8192,
+      max_tokens: options?.maxTokens || 16384,
       system: systemPrompt,
       messages,
       temperature: options?.temperature,
@@ -70,6 +73,13 @@ export class ClaudeAdapter implements AIModelAdapter {
       if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
         yield chunk.delta.text
       }
+    }
+
+    try {
+      const finalMsg = await stream.finalMessage()
+      this.lastStopReason = finalMsg.stop_reason || ''
+    } catch {
+      this.lastStopReason = ''
     }
   }
 

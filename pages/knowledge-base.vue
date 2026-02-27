@@ -32,23 +32,25 @@
       </div>
 
       <!-- Table -->
-      <div class="flex-1 overflow-auto p-6">
+      <div class="flex-1 overflow-auto p-6 min-w-0">
         <!-- Loading: 骨架屏 -->
         <div v-if="loading">
-          <Table>
+          <Table class="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead>{{ t('knowledgeBase.table.name') }}</TableHead>
                 <TableHead>{{ t('knowledgeBase.table.type') }}</TableHead>
-                <TableHead>{{ t('knowledgeBase.table.source') }}</TableHead>
-                <TableHead>{{ t('knowledgeBase.table.lastSync') }}</TableHead>
-                <TableHead>{{ t('knowledgeBase.table.size') }}</TableHead>
+                <TableHead class="whitespace-nowrap">{{ t('knowledgeBase.table.source') }}</TableHead>
+                <TableHead class="whitespace-nowrap">{{ t('knowledgeBase.table.indexStatus') }}</TableHead>
+                <TableHead class="whitespace-nowrap">{{ t('knowledgeBase.table.lastSync') }}</TableHead>
+                <TableHead class="whitespace-nowrap">{{ t('knowledgeBase.table.size') }}</TableHead>
                 <TableHead class="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TableRow v-for="i in 5" :key="i">
                 <TableCell><Skeleton class="h-4 w-40" /></TableCell>
+                <TableCell><Skeleton class="h-5 w-16 rounded-full" /></TableCell>
                 <TableCell><Skeleton class="h-5 w-16 rounded-full" /></TableCell>
                 <TableCell><Skeleton class="h-5 w-16 rounded-full" /></TableCell>
                 <TableCell><Skeleton class="h-4 w-24" /></TableCell>
@@ -66,15 +68,25 @@
         </div>
 
         <template v-else>
-          <Table>
+          <Table class="min-w-[640px] table-fixed">
+            <colgroup>
+              <col class="w-auto" />
+              <col class="w-[72px]" />
+              <col class="w-[96px]" />
+              <col class="w-[96px]" />
+              <col class="w-[100px]" />
+              <col class="w-[72px]" />
+              <col class="w-[50px]" />
+            </colgroup>
             <TableHeader>
               <TableRow>
                 <TableHead>{{ t('knowledgeBase.table.name') }}</TableHead>
-                <TableHead>{{ t('knowledgeBase.table.type') }}</TableHead>
-                <TableHead>{{ t('knowledgeBase.table.source') }}</TableHead>
-                <TableHead>{{ t('knowledgeBase.table.lastSync') }}</TableHead>
-                <TableHead>{{ t('knowledgeBase.table.size') }}</TableHead>
-                <TableHead class="w-[50px]"></TableHead>
+                <TableHead class="whitespace-nowrap">{{ t('knowledgeBase.table.type') }}</TableHead>
+                <TableHead class="whitespace-nowrap">{{ t('knowledgeBase.table.source') }}</TableHead>
+                <TableHead class="whitespace-nowrap">{{ t('knowledgeBase.table.indexStatus') }}</TableHead>
+                <TableHead class="whitespace-nowrap">{{ t('knowledgeBase.table.lastSync') }}</TableHead>
+                <TableHead class="whitespace-nowrap">{{ t('knowledgeBase.table.size') }}</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -92,14 +104,22 @@
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{{ t(`knowledgeBase.types.${resource.type}`) }}</Badge>
+                  <Badge variant="outline" class="whitespace-nowrap">{{ t(`knowledgeBase.types.${resource.type}`) }}</Badge>
                 </TableCell>
-                <TableCell>
-                  <Badge :variant="resource.source === 'EXTERNAL' ? 'default' : 'secondary'">
+                <TableCell class="whitespace-nowrap">
+                  <Badge :variant="resource.source === 'EXTERNAL' ? 'default' : 'secondary'" class="whitespace-nowrap">
                     {{ t(`knowledgeBase.sources.${resource.source}`) }}
                   </Badge>
                 </TableCell>
-                <TableCell class="text-muted-foreground">
+                <TableCell class="whitespace-nowrap">
+                  <template v-if="resource.type === 'DOCUMENT'">
+                    <Badge :variant="getIndexStatusVariant(resource.processingStatus)" class="text-xs whitespace-nowrap">
+                      {{ t(getIndexStatusKey(resource.processingStatus)) }}
+                    </Badge>
+                  </template>
+                  <span v-else class="text-muted-foreground text-xs">—</span>
+                </TableCell>
+                <TableCell class="text-muted-foreground whitespace-nowrap">
                   {{ formatDate(resource.lastSync) }}
                 </TableCell>
                 <TableCell class="text-muted-foreground">
@@ -197,7 +217,7 @@
 
     <!-- Upload Document Dialog -->
     <Dialog v-model:open="uploadDialogOpen">
-      <DialogContent class="max-w-2xl">
+      <DialogContent class="max-w-2xl" @pointer-down-outside.prevent @interact-outside.prevent>
         <DialogHeader>
           <DialogTitle>{{ t('documents.upload.title') }}</DialogTitle>
         </DialogHeader>
@@ -367,6 +387,7 @@ interface Resource {
   source: 'EXTERNAL' | 'GENERATED'
   lastSync: string
   size: number
+  processingStatus?: 'pending' | 'processing' | 'completed' | 'failed' | 'retrying'
   usage?: {
     references: number
     lastUsed: string
@@ -444,8 +465,8 @@ async function loadResources () {
 
     // Load both documents and PRDs in parallel
     const [documentsResponse, prdsResponse] = await Promise.all([
-      $fetch<{ success: boolean; data: { documents: any[] } }>('/api/documents', { query: queryParams }),
-      $fetch<{ success: boolean; data: { prds: any[] } }>('/api/prd', { query: queryParams })
+      $fetch<{ success: boolean; data: { documents: any[] } }>('/api/v1/documents', { query: queryParams }),
+      $fetch<{ success: boolean; data: { prds: any[] } }>('/api/v1/prd', { query: queryParams })
     ])
 
     // Map documents
@@ -456,6 +477,7 @@ async function loadResources () {
       source: 'EXTERNAL' as const,
       lastSync: doc.updatedAt || doc.createdAt,
       size: doc.fileSize || doc.size || 0,
+      processingStatus: doc.processingStatus,
       usage: {
         references: 0,
         lastUsed: doc.updatedAt || doc.createdAt
@@ -545,6 +567,28 @@ function formatSize(bytes: number) {
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 
+function getIndexStatusVariant(status?: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+  switch (status) {
+    case 'completed': return 'default'
+    case 'processing':
+    case 'pending':
+    case 'retrying': return 'secondary'
+    case 'failed': return 'destructive'
+    default: return 'outline'
+  }
+}
+
+function getIndexStatusKey(status?: string): string {
+  switch (status) {
+    case 'completed': return 'documents.status.indexed'
+    case 'processing': return 'documents.status.processing'
+    case 'pending': return 'documents.status.pending'
+    case 'retrying': return 'documents.status.retrying'
+    case 'failed': return 'documents.status.failed'
+    default: return 'documents.status.pending'
+  }
+}
+
 const router = useRouter()
 
 function handleAddResource() {
@@ -574,7 +618,7 @@ function handleDownload(resource: Resource) {
     return
   }
   // 通过浏览器直接跳转到下载接口，后端会重定向到预签名 URL
-  window.open(`/api/documents/${resource.id}/download`, '_blank')
+  window.open(`/api/v1/documents/${resource.id}/download`, '_blank')
 }
 
 function handleDeleteResource(resource: Resource) {
@@ -586,7 +630,7 @@ async function confirmDelete() {
   if (!resourceToDelete.value) return
 
   try {
-    await $fetch(`/api/documents/${resourceToDelete.value.id}`, { method: 'DELETE' })
+    await $fetch(`/api/v1/documents/${resourceToDelete.value.id}`, { method: 'DELETE' })
     resources.value = resources.value.filter(r => r.id !== resourceToDelete.value!.id)
     if (selectedResource.value?.id === resourceToDelete.value.id) {
       selectedResource.value = null
@@ -608,7 +652,7 @@ async function confirmDelete() {
 
 function handleClearCache() {
   if (!currentWorkspaceId.value) return
-  $fetch('/api/documents/cache', {
+  $fetch('/api/v1/documents/cache', {
     method: 'DELETE',
     query: { workspaceId: currentWorkspaceId.value }
   }).then(() => {
@@ -622,7 +666,7 @@ function handleClearCache() {
 
 function handleReindexAll() {
   if (!currentWorkspaceId.value) return
-  $fetch('/api/documents/reindex', {
+  $fetch('/api/v1/documents/reindex', {
     method: 'POST',
     body: { workspaceId: currentWorkspaceId.value }
   }).then(() => {
