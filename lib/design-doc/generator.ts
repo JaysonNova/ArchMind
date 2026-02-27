@@ -5,7 +5,6 @@
 
 import { ModelManager } from '~/lib/ai/manager'
 import { DesignDocDAO } from '~/lib/db/dao/design-doc-dao'
-import { dbClient } from '~/lib/db/client'
 import { logger } from '~/lib/logger'
 import { buildDesignDocPrompt, DESIGN_DOC_SYSTEM_PROMPT, DESIGN_DOC_TEMPLATE, isContentCompleteForTemplate } from './template'
 import type { DesignDocument } from '~/types/design-doc'
@@ -223,7 +222,7 @@ export class DesignDocGenerator {
     const modelId = options.model || this.modelManager.getDefaultModelId()
     const temperature = options.temperature || 0.7
     const maxTokens = options.maxTokens || 16384
-    const template = options.customTemplate || DESIGN_DOC_TEMPLATE
+    const _template = options.customTemplate || DESIGN_DOC_TEMPLATE
 
     const modelAdapter = this.modelManager.getAdapter(modelId)
     if (!modelAdapter) {
