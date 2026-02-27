@@ -66,7 +66,7 @@ export class DesignDocGenerator {
     const modelId = options.model || this.modelManager.getDefaultModelId()
     const temperature = options.temperature || 0.7
     const maxTokens = options.maxTokens || 16384
-    const _template = options.customTemplate || DESIGN_DOC_TEMPLATE
+    const template = options.customTemplate || DESIGN_DOC_TEMPLATE
 
     const modelAdapter = this.modelManager.getAdapter(modelId)
     if (!modelAdapter) {
