@@ -6,7 +6,7 @@
 import { FeishuClient } from '~/lib/feishu/client'
 
 export default defineEventHandler(async (event) => {
-  const userId = requireAuth(event)
+  const _userId = requireAuth(event)
   const body = await readBody<{ url: string }>(event)
 
   if (!body.url) {
