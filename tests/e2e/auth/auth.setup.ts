@@ -38,8 +38,8 @@ setup('authenticate', async ({ page, request }) => {
   await page.getByLabel(/密码|Password/i).fill(testPassword)
   await page.getByRole('button', { name: /登录|Login|Sign in/i }).click()
 
-  // 4. 等待登录成功，跳转到工作区或首页
-  await page.waitForURL(/\/(workspace|documents|generate|projects)/, { timeout: 15_000 })
+  // 4. 等待登录成功，跳转到 /app 或其他受保护页面
+  await page.waitForURL(/\/(app|workspace|documents|generate|projects)/, { timeout: 15_000 })
 
   // 5. 保存认证状态（Cookie）
   await page.context().storageState({ path: authFile })
