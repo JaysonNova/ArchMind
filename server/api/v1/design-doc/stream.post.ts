@@ -52,7 +52,8 @@ export default defineEventHandler(async (event) => {
       `data: ${JSON.stringify({
         type: 'doc_parsed',
         title: feishuDoc.title,
-        contentLength: feishuDoc.content.length
+        contentLength: feishuDoc.content.length,
+        imageCount: feishuDoc.images?.length || 0
       })}\n\n`
     )
 
@@ -87,7 +88,11 @@ export default defineEventHandler(async (event) => {
       userId,
       workspaceId: body.workspaceId,
       additionalContext: body.additionalContext,
-      customTemplate: body.customTemplate
+      customTemplate: body.customTemplate,
+      images: feishuDoc.images?.map((img: { base64: string; mediaType: string }) => ({
+        base64: img.base64,
+        mediaType: img.mediaType
+      }))
     }
 
     let attempt = 0

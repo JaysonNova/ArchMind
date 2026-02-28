@@ -233,6 +233,8 @@ export function buildDesignDocPrompt(
 
 **内容**:
 ${feishuDocContent}
+
+> 注意：文档中标记为 [图片-N] 的位置对应附加的图片，请仔细分析这些图片（包括流程图、界面截图、架构图等）来辅助你的设计方案。
 `
 
   if (additionalContext) {

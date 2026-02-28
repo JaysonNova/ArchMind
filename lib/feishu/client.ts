@@ -20,8 +20,8 @@ export class FeishuClient {
   private appSecret: string
 
   constructor(appId: string, appSecret: string) {
-    this.appId = appId
-    this.appSecret = appSecret
+    this.appId = appId.trim()
+    this.appSecret = appSecret.trim()
   }
 
   /**
@@ -112,6 +112,32 @@ export class FeishuClient {
 
     logger.info(`[Feishu] 文档 ${documentId} 共 ${allBlocks.length} 个 blocks`)
     return allBlocks
+  }
+
+  /**
+   * 下载文档中的图片素材，返回 base64 编码
+   */
+  async downloadMedia(fileToken: string): Promise<{ base64: string; mediaType: string }> {
+    const token = await this.getTenantAccessToken()
+
+    const response = await fetch(
+      `${FEISHU_API_BASE}/drive/v1/medias/${fileToken}/download`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`下载图片失败: HTTP ${response.status}`)
+    }
+
+    const contentType = response.headers.get('content-type') || 'image/png'
+    const arrayBuffer = await response.arrayBuffer()
+    const base64 = Buffer.from(arrayBuffer).toString('base64')
+
+    logger.info(`[Feishu] 图片下载完成: ${fileToken} (${contentType}, ${Math.round(arrayBuffer.byteLength / 1024)}KB)`)
+
+    return { base64, mediaType: contentType }
   }
 
   /**

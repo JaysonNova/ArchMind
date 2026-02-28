@@ -77,11 +77,22 @@ export interface FeishuDocMetaResponse {
   data: FeishuDocumentMeta
 }
 
+export interface FeishuImageData {
+  token: string
+  base64: string
+  mediaType: string
+  width?: number
+  height?: number
+  /** Placeholder label used in markdown content, e.g. [图片-1] */
+  label: string
+}
+
 export interface ParsedFeishuDocument {
   title: string
   documentId: string
   content: string
   url: string
+  images: FeishuImageData[]
 }
 
 export const FEISHU_BLOCK_TYPE = {

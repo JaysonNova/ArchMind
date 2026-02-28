@@ -6,7 +6,7 @@
 import { DesignDocDAO } from '~/lib/db/dao/design-doc-dao'
 
 export default defineEventHandler(async (event) => {
-  const t = useServerT(event)
+  const _t = useServerT(event)
   try {
     const userId = requireAuth(event)
     const id = getRouterParam(event, 'id')

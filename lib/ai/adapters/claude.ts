@@ -22,16 +22,36 @@ export class ClaudeAdapter implements AIModelAdapter {
 
   private buildClaudeParams (prompt: string, options?: GenerateOptions) {
     let systemPrompt = options?.systemPrompt
-    let messages: Array<{ role: 'user' | 'assistant'; content: string }>
+    type ContentBlock = { type: 'text'; text: string } | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
+    let messages: Array<{ role: 'user' | 'assistant'; content: string | ContentBlock[] }>
 
     if (options?.messages) {
       const systemMsg = options.messages.find(m => m.role === 'system')
       if (systemMsg) systemPrompt = systemMsg.content
       messages = options.messages
         .filter(m => m.role !== 'system')
-        .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+        .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content as string | ContentBlock[] }))
     } else {
       messages = [{ role: 'user', content: prompt }]
+    }
+
+    // Inject images into the first user message for multimodal requests
+    if (options?.images && options.images.length > 0 && messages.length > 0) {
+      const firstUserIdx = messages.findIndex(m => m.role === 'user')
+      if (firstUserIdx !== -1) {
+        const msg = messages[firstUserIdx]
+        const textContent = typeof msg.content === 'string' ? msg.content : prompt
+        const contentBlocks: ContentBlock[] = options.images.map(img => ({
+          type: 'image' as const,
+          source: {
+            type: 'base64' as const,
+            media_type: img.mediaType,
+            data: img.base64
+          }
+        }))
+        contentBlocks.push({ type: 'text', text: textContent })
+        messages[firstUserIdx] = { role: 'user', content: contentBlocks }
+      }
     }
 
     return { systemPrompt, messages }
@@ -43,7 +63,7 @@ export class ClaudeAdapter implements AIModelAdapter {
       model: this.modelId,
       max_tokens: options?.maxTokens || 16384,
       system: systemPrompt,
-      messages,
+      messages: messages as any,
       temperature: options?.temperature,
       top_p: options?.topP
     })
@@ -64,7 +84,7 @@ export class ClaudeAdapter implements AIModelAdapter {
       model: this.modelId,
       max_tokens: options?.maxTokens || 16384,
       system: systemPrompt,
-      messages,
+      messages: messages as any,
       temperature: options?.temperature,
       top_p: options?.topP
     })

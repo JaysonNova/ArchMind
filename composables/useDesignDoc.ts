@@ -6,7 +6,6 @@
 import type {
   DesignDocument,
   DesignDocGenerateRequest,
-  DesignDocStreamChunk,
   DesignDocListResponse
 } from '~/types/design-doc'
 

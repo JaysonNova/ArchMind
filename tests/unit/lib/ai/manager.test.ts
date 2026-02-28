@@ -170,7 +170,7 @@ describe('ModelManager', () => {
       })
 
       const models = manager.getAvailableModels()
-      expect(models).toContain('claude-opus-4-20250514')
+      expect(models).toContain('claude-sonnet-4-6')
       expect(models).toContain('gpt-4o')
     })
   })
@@ -178,7 +178,7 @@ describe('ModelManager', () => {
   describe('getAdapter', () => {
     it('should return adapter for existing model', () => {
       const manager = new ModelManager({ anthropicApiKey: 'test-key' })
-      const adapter = manager.getAdapter('claude-opus-4-20250514')
+      const adapter = manager.getAdapter('claude-sonnet-4-6')
       expect(adapter).toBeDefined()
       expect(adapter?.name).toBe('Claude')
     })
@@ -200,7 +200,7 @@ describe('ModelManager', () => {
 
       const models = manager.getAvailableModels()
       expect(models.length).toBeGreaterThanOrEqual(3)
-      expect(models).toContain('claude-opus-4-20250514')
+      expect(models).toContain('claude-sonnet-4-6')
       expect(models).toContain('gpt-4o')
       expect(models).toContain('gemini-2.0-flash')
     })
@@ -250,9 +250,9 @@ describe('ModelManager', () => {
   describe('getModelInfo', () => {
     it('should return model info for existing model', () => {
       const manager = new ModelManager({ anthropicApiKey: 'test-key' })
-      const info = manager.getModelInfo('claude-opus-4-20250514')
+      const info = manager.getModelInfo('claude-sonnet-4-6')
       expect(info).toBeDefined()
-      expect(info?.modelId).toBe('claude-opus-4-20250514')
+      expect(info?.modelId).toBe('claude-sonnet-4-6')
       expect(info?.capabilities).toBeDefined()
     })
 
@@ -266,7 +266,7 @@ describe('ModelManager', () => {
   describe('estimateCost', () => {
     it('should return cost estimate for existing model', () => {
       const manager = new ModelManager({ anthropicApiKey: 'test-key' })
-      const cost = manager.estimateCost('claude-opus-4-20250514', 1000)
+      const cost = manager.estimateCost('claude-sonnet-4-6', 1000)
       expect(cost).toBeDefined()
       expect(cost?.inputCost).toBeTypeOf('number')
       expect(cost?.currency).toBe('USD')
@@ -389,7 +389,7 @@ describe('ModelManager', () => {
   describe('isModelAvailable', () => {
     it('模型存在且 isAvailable() 返回 true', async () => {
       const manager = new ModelManager({ anthropicApiKey: 'test-key' })
-      const available = await manager.isModelAvailable('claude-opus-4-20250514')
+      const available = await manager.isModelAvailable('claude-sonnet-4-6')
       expect(available).toBe(true)
     })
 
@@ -455,13 +455,13 @@ describe('getModelManager singleton', () => {
 
   it('已有实例时传入新配置会重新初始化适配器', () => {
     const instance1 = getModelManager({ anthropicApiKey: 'test' })
-    expect(instance1.getAvailableModels()).toContain('claude-opus-4-20250514')
+    expect(instance1.getAvailableModels()).toContain('claude-sonnet-4-6')
 
     // 传入新配置，清空旧适配器（无 anthropicApiKey）
     getModelManager({ openaiApiKey: 'test-openai' })
 
     // 同一实例，但适配器已更新
-    expect(instance1.getAvailableModels()).not.toContain('claude-opus-4-20250514')
+    expect(instance1.getAvailableModels()).not.toContain('claude-sonnet-4-6')
     expect(instance1.getAvailableModels()).toContain('gpt-4o')
   })
 
@@ -470,7 +470,7 @@ describe('getModelManager singleton', () => {
     const instance2 = getModelManager()
     expect(instance2).toBe(instance1)
     // 适配器未被清空
-    expect(instance2.getAvailableModels()).toContain('claude-opus-4-20250514')
+    expect(instance2.getAvailableModels()).toContain('claude-sonnet-4-6')
   })
 })
 

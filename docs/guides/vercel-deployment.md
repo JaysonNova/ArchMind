@@ -124,7 +124,7 @@ vercel link --yes --project archmind-ai
 ### Step 4 — 设置环境变量
 
 ```bash
-# 必填
+# 必填：基础设施
 echo '<NEON_CONNECTION_STRING>' | vercel env add DATABASE_URL production --yes
 echo '<JWT_SECRET>' | vercel env add JWT_SECRET production --yes
 echo '<ENCRYPTION_KEY>' | vercel env add ENCRYPTION_KEY production --yes
@@ -135,7 +135,15 @@ echo 'https://archmind-ai.vercel.app' | vercel env add BASE_URL production --yes
 # AI Key（至少一个）
 echo '<GLM_API_KEY>' | vercel env add GLM_API_KEY production --yes
 
-# 可选
+# Anthropic（如使用 Claude 模型，支持自定义代理 baseUrl）
+echo '<ANTHROPIC_API_KEY>' | vercel env add ANTHROPIC_API_KEY production --yes
+echo '<ANTHROPIC_BASE_URL>' | vercel env add ANTHROPIC_BASE_URL production --yes
+
+# 飞书开放平台（设计方案模块需要）
+echo '<FEISHU_APP_ID>' | vercel env add FEISHU_APP_ID production --yes
+echo '<FEISHU_APP_SECRET>' | vercel env add FEISHU_APP_SECRET production --yes
+
+# 可选：默认模型参数
 echo 'glm-4' | vercel env add DEFAULT_MODEL production --yes
 echo '0.7' | vercel env add DEFAULT_TEMPERATURE production --yes
 echo '8000' | vercel env add DEFAULT_MAX_TOKENS production --yes
@@ -260,15 +268,26 @@ open https://github.com/<owner>/<repo>/actions
 
 ### AI 模型环境变量（按需）
 
-| 变量 | 提供商 |
-|------|--------|
-| `GLM_API_KEY` | 智谱 AI |
-| `OPENAI_API_KEY` | OpenAI |
-| `ANTHROPIC_API_KEY` | Anthropic |
-| `GOOGLE_API_KEY` | Google AI |
-| `DEEPSEEK_API_KEY` | DeepSeek |
-| `DASHSCOPE_API_KEY` | 阿里通义千问 |
-| `BAIDU_API_KEY` | 百度文心一言 |
+| 变量 | 提供商 | 说明 |
+|------|--------|------|
+| `GLM_API_KEY` | 智谱 AI | 默认模型，中文优化 |
+| `OPENAI_API_KEY` | OpenAI | 通用 + Embedding |
+| `ANTHROPIC_API_KEY` | Anthropic | PRD/设计方案生成 |
+| `ANTHROPIC_BASE_URL` | Anthropic | 可选，自定义代理地址（如 `https://subus.imds.ai/`） |
+| `GOOGLE_API_KEY` | Google AI | 大上下文 (200K) |
+| `DEEPSEEK_API_KEY` | DeepSeek | 代码任务 |
+| `DASHSCOPE_API_KEY` | 阿里通义千问 | 中文优化 |
+| `BAIDU_API_KEY` | 百度文心一言 | 中文优化 |
+
+### 飞书开放平台环境变量（设计方案模块）
+
+| 变量 | 说明 |
+|------|------|
+| `FEISHU_APP_ID` | 飞书应用 App ID |
+| `FEISHU_APP_SECRET` | 飞书应用 App Secret |
+
+> 获取方式：[飞书开放平台](https://open.feishu.cn) → 创建自建应用 → 凭证与基本信息
+> 所需权限：`docx:document:readonly`（文档读取）、`drive:drive:readonly`（云文档下载，用于图片）
 
 ### 可选环境变量
 
@@ -287,6 +306,12 @@ open https://github.com/<owner>/<repo>/actions
 | `VERCEL_TOKEN` | Vercel API Token |
 | `VERCEL_ORG_ID` | Vercel 组织/团队 ID |
 | `VERCEL_PROJECT_ID` | Vercel 项目 ID |
+
+> **注意**：CI/CD 方式部署时，应用运行时环境变量（如 `DATABASE_URL`、`ANTHROPIC_API_KEY`、`FEISHU_APP_ID` 等）**不需要**设置为 GitHub Secrets。它们应设置在 **Vercel 环境变量**中（通过 CLI 或 Vercel Dashboard）。GitHub Secrets 仅用于 CI workflow 中 `vercel deploy` 命令的认证。
+>
+> 简而言之：
+> - **Vercel 环境变量**：应用运行时配置（数据库、AI Key、飞书凭证等）
+> - **GitHub Secrets**：仅 `VERCEL_TOKEN` + `VERCEL_ORG_ID` + `VERCEL_PROJECT_ID`（CI 部署认证）
 
 ---
 
@@ -376,7 +401,8 @@ vercel --prod
 ✅ Neon 数据库 + 执行 neon-init.sql
 ✅ JWT_SECRET + ENCRYPTION_KEY + API_KEY_ENCRYPTION_SECRET
 ✅ APP_URL + BASE_URL
-✅ 至少一个 AI API Key
+✅ 至少一个 AI API Key（推荐 GLM_API_KEY 或 ANTHROPIC_API_KEY）
+✅ 飞书凭证（FEISHU_APP_ID + FEISHU_APP_SECRET）— 设计方案模块需要
 ```
 
 ### 常用命令速查
@@ -397,6 +423,6 @@ psql "<NEON_URL>" -f scripts/neon-init.sql # 初始化数据库
 
 ---
 
-*最后更新: 2026-02-25*
+*最后更新: 2026-02-28*
 
  

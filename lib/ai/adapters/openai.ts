@@ -20,12 +20,37 @@ export class OpenAIAdapter implements AIModelAdapter {
   }
 
   private buildMessages (prompt: string, options?: GenerateOptions) {
+    type ContentPart = { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }
     if (options?.messages) {
-      return options.messages.map(m => ({ role: m.role as 'system' | 'user' | 'assistant', content: m.content }))
+      const msgs = options.messages.map(m => ({ role: m.role as 'system' | 'user' | 'assistant', content: m.content as string | ContentPart[] }))
+      // Inject images into the first user message
+      if (options.images && options.images.length > 0) {
+        const firstUserIdx = msgs.findIndex(m => m.role === 'user')
+        if (firstUserIdx !== -1) {
+          const msg = msgs[firstUserIdx]
+          const textContent = typeof msg.content === 'string' ? msg.content : prompt
+          const parts: ContentPart[] = [{ type: 'text', text: textContent }]
+          for (const img of options.images) {
+            parts.push({ type: 'image_url', image_url: { url: `data:${img.mediaType};base64,${img.base64}` } })
+          }
+          msgs[firstUserIdx] = { role: 'user', content: parts }
+        }
+      }
+      return msgs
     }
+    // No messages array — build from prompt
+    const userContent: string | ContentPart[] = (options?.images && options.images.length > 0)
+      ? [
+          { type: 'text' as const, text: prompt },
+          ...options.images.map(img => ({
+            type: 'image_url' as const,
+            image_url: { url: `data:${img.mediaType};base64,${img.base64}` }
+          }))
+        ]
+      : prompt
     return [
       { role: 'system' as const, content: options?.systemPrompt || '' },
-      { role: 'user' as const, content: prompt }
+      { role: 'user' as const, content: userContent }
     ]
   }
 
@@ -33,7 +58,7 @@ export class OpenAIAdapter implements AIModelAdapter {
     const response = await this.client.chat.completions.create({
       model: this.modelId,
       max_tokens: options?.maxTokens || 8192,
-      messages: this.buildMessages(prompt, options),
+      messages: this.buildMessages(prompt, options) as any,
       temperature: options?.temperature,
       top_p: options?.topP
     })
@@ -53,7 +78,7 @@ export class OpenAIAdapter implements AIModelAdapter {
     const stream = await this.client.chat.completions.create({
       model: this.modelId,
       max_tokens: options?.maxTokens || 8192,
-      messages: this.buildMessages(prompt, options),
+      messages: this.buildMessages(prompt, options) as any,
       temperature: options?.temperature,
       top_p: options?.topP,
       stream: true
