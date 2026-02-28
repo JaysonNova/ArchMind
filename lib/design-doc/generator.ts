@@ -8,6 +8,7 @@ import { DesignDocDAO } from '~/lib/db/dao/design-doc-dao'
 import { logger } from '~/lib/logger'
 import { buildDesignDocPrompt, DESIGN_DOC_SYSTEM_PROMPT, DESIGN_DOC_TEMPLATE, isContentCompleteForTemplate } from './template'
 import type { DesignDocument } from '~/types/design-doc'
+import type { ImageInput } from '~/lib/ai/types'
 
 export interface DesignDocGenerationOptions {
   model?: string
@@ -18,6 +19,8 @@ export interface DesignDocGenerationOptions {
   additionalContext?: string
   skipSave?: boolean
   customTemplate?: string  // 自定义模板内容
+  /** Images extracted from the Feishu document (for vision-capable models) */
+  images?: ImageInput[]
 }
 
 export interface DesignDocGenerationResult {
@@ -86,7 +89,8 @@ export class DesignDocGenerator {
     const streamIterator = modelAdapter.generateStream(fullPrompt, {
       temperature,
       maxTokens,
-      systemPrompt: DESIGN_DOC_SYSTEM_PROMPT
+      systemPrompt: DESIGN_DOC_SYSTEM_PROMPT,
+      images: options.images
     }) as unknown as AsyncIterable<string>
 
     for await (const chunk of streamIterator) {
@@ -239,7 +243,8 @@ export class DesignDocGenerator {
     let content = await modelAdapter.generateText(fullPrompt, {
       temperature,
       maxTokens,
-      systemPrompt: DESIGN_DOC_SYSTEM_PROMPT
+      systemPrompt: DESIGN_DOC_SYSTEM_PROMPT,
+      images: options.images
     })
 
     // Non-stream continuation: if model was cut off, send follow-up requests
