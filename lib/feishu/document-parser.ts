@@ -36,6 +36,9 @@ export class FeishuDocumentParser {
       this.client.getDocumentBlocks(documentId)
     ])
 
+    // Use the real document_id from meta (may differ from URL token for wiki docs)
+    const realDocumentId = meta.document.document_id || documentId
+
     // Build a map from block_id → block for table cell lookups
     const blockMap = new Map<string, FeishuBlock>()
     for (const block of blocks) {
@@ -64,7 +67,7 @@ export class FeishuDocumentParser {
       const downloadResults = await Promise.allSettled(
         imagesToDownload.map(async (img, index) => {
           try {
-            const { base64, mediaType } = await this.client.downloadMedia(img.token)
+            const { base64, mediaType } = await this.client.downloadMedia(img.token, realDocumentId)
             // Check size limit
             const sizeBytes = Buffer.byteLength(base64, 'base64')
             if (sizeBytes > MAX_IMAGE_BYTES) {

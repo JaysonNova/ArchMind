@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { extractSectionsFromTemplate, isContentCompleteForTemplate } from '~/lib/design-doc/template'
+import { extractSectionsFromTemplate, isContentCompleteForTemplate, buildDesignDocPrompt, buildSystemPrompt } from '~/lib/design-doc/template'
 
 describe('Design Doc Template Functions', () => {
   describe('extractSectionsFromTemplate', () => {
@@ -91,6 +91,57 @@ describe('Design Doc Template Functions', () => {
       const template = `# 标题\n\n这是一段文字，没有章节。`
       const sections = extractSectionsFromTemplate(template)
       expect(sections.size).toBe(0)
+    })
+
+    it('should fall back to counting all ## headings when no numbered sections', () => {
+      const template = `# 设计方案
+
+## 需求概述
+内容...
+
+## 架构设计
+内容...
+
+## 组件设计
+内容...
+
+## 开发计划
+内容...`
+      const sections = extractSectionsFromTemplate(template)
+      expect(sections.size).toBe(4)
+      expect(sections.has(1)).toBe(true)
+      expect(sections.has(4)).toBe(true)
+    })
+
+    it('should prefer numbered sections over fallback counting', () => {
+      const template = `# 方案
+
+## 1. 概述
+## 2. 设计
+`
+      const sections = extractSectionsFromTemplate(template)
+      expect(sections.size).toBe(2)
+      expect(sections.has(1)).toBe(true)
+      expect(sections.has(2)).toBe(true)
+    })
+
+    it('should handle mermaid template with unnumbered sections', () => {
+      const template = `# 前端设计方案
+
+## 需求概述
+### 业务流程图
+\`\`\`mermaid
+flowchart TD
+    A --> B
+\`\`\`
+
+## 页面设计
+内容...
+
+## 组件设计
+内容...`
+      const sections = extractSectionsFromTemplate(template)
+      expect(sections.size).toBe(3)
     })
   })
 
@@ -227,6 +278,65 @@ describe('Design Doc Template Functions', () => {
 内容...
 `
       expect(isContentCompleteForTemplate(incompleteContent, template)).toBe(false)
+    })
+
+    it('should work with unnumbered template sections', () => {
+      const template = `
+## 需求概述
+## 架构设计
+## 组件设计
+`
+      // Template has 3 unnumbered sections -> mapped to {1, 2, 3}
+      const completeContent = `
+## 需求概述
+内容...
+## 架构设计
+内容...
+## 组件设计
+内容...
+`
+      expect(isContentCompleteForTemplate(completeContent, template)).toBe(true)
+    })
+  })
+
+  describe('buildDesignDocPrompt', () => {
+    it('should include custom template in prompt when provided', () => {
+      const customTemplate = `# 自定义方案\n## 概述\n## 设计`
+      const prompt = buildDesignDocPrompt('doc content', 'doc title', undefined, customTemplate)
+      expect(prompt).toContain('自定义模板')
+      expect(prompt).toContain(customTemplate)
+    })
+
+    it('should not include custom template section when not provided', () => {
+      const prompt = buildDesignDocPrompt('doc content', 'doc title')
+      expect(prompt).not.toContain('自定义模板')
+    })
+
+    it('should include additional context when provided', () => {
+      const prompt = buildDesignDocPrompt('doc content', 'doc title', '使用 Vue 3')
+      expect(prompt).toContain('补充说明')
+      expect(prompt).toContain('使用 Vue 3')
+    })
+  })
+
+  describe('buildSystemPrompt', () => {
+    it('should return default system prompt when no custom template', () => {
+      const prompt = buildSystemPrompt()
+      expect(prompt).toContain('全部 10 个章节')
+    })
+
+    it('should return custom system prompt with section count', () => {
+      const customTemplate = `## 1. 概述\n## 2. 设计\n## 3. 实现`
+      const prompt = buildSystemPrompt(customTemplate)
+      expect(prompt).toContain('自定义模板')
+      expect(prompt).toContain('全部 3 个章节')
+    })
+
+    it('should handle unnumbered custom template', () => {
+      const customTemplate = `## 概述\n内容\n## 设计\n内容`
+      const prompt = buildSystemPrompt(customTemplate)
+      expect(prompt).toContain('自定义模板')
+      expect(prompt).toContain('全部 2 个章节')
     })
   })
 })

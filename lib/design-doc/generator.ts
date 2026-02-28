@@ -6,7 +6,7 @@
 import { ModelManager } from '~/lib/ai/manager'
 import { DesignDocDAO } from '~/lib/db/dao/design-doc-dao'
 import { logger } from '~/lib/logger'
-import { buildDesignDocPrompt, DESIGN_DOC_SYSTEM_PROMPT, DESIGN_DOC_TEMPLATE, isContentCompleteForTemplate } from './template'
+import { buildDesignDocPrompt, buildSystemPrompt, DESIGN_DOC_SYSTEM_PROMPT, DESIGN_DOC_TEMPLATE, isContentCompleteForTemplate } from './template'
 import type { DesignDocument } from '~/types/design-doc'
 import type { ImageInput } from '~/lib/ai/types'
 
@@ -79,8 +79,11 @@ export class DesignDocGenerator {
     const fullPrompt = buildDesignDocPrompt(
       feishuDocContent,
       feishuDocTitle,
-      options.additionalContext
+      options.additionalContext,
+      options.customTemplate
     )
+
+    const systemPrompt = buildSystemPrompt(options.customTemplate)
 
     const startTime = Date.now()
     let content = ''
@@ -89,7 +92,7 @@ export class DesignDocGenerator {
     const streamIterator = modelAdapter.generateStream(fullPrompt, {
       temperature,
       maxTokens,
-      systemPrompt: DESIGN_DOC_SYSTEM_PROMPT,
+      systemPrompt,
       images: options.images
     }) as unknown as AsyncIterable<string>
 
@@ -121,7 +124,7 @@ export class DesignDocGenerator {
         {
           temperature,
           maxTokens,
-          systemPrompt: DESIGN_DOC_SYSTEM_PROMPT,
+          systemPrompt,
           messages: [
             { role: 'user', content: fullPrompt },
             { role: 'assistant', content },
@@ -236,14 +239,17 @@ export class DesignDocGenerator {
     const fullPrompt = buildDesignDocPrompt(
       feishuDocContent,
       feishuDocTitle,
-      options.additionalContext
+      options.additionalContext,
+      options.customTemplate
     )
+
+    const systemPrompt = buildSystemPrompt(options.customTemplate)
 
     const startTime = Date.now()
     let content = await modelAdapter.generateText(fullPrompt, {
       temperature,
       maxTokens,
-      systemPrompt: DESIGN_DOC_SYSTEM_PROMPT,
+      systemPrompt,
       images: options.images
     })
 
@@ -260,7 +266,7 @@ export class DesignDocGenerator {
         {
           temperature,
           maxTokens,
-          systemPrompt: DESIGN_DOC_SYSTEM_PROMPT,
+          systemPrompt,
           messages: [
             { role: 'user', content: fullPrompt },
             { role: 'assistant', content },
