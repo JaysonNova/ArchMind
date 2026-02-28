@@ -726,18 +726,7 @@
     "deleteConfirm": "确定删除此设计方案？",
     "deleteConfirmDesc": "此操作无法撤销，设计方案将被永久删除。",
     "deleteSuccess": "删除成功",
-    "deleteFailed": "删除失败",
-    "sourceFeishu": "飞书文档",
-    "sourcePdf": "PDF 上传",
-    "pdfUpload": "上传 PDF 文件",
-    "pdfSelect": "选择 PDF 文件",
-    "pdfUploading": "上传解析中...",
-    "pdfUploaded": "已上传",
-    "pdfUploadSuccess": "PDF 上传成功",
-    "pdfUploadFailed": "PDF 上传失败",
-    "pdfInfo": "{pages} 页 | {chars} 字符 | {images} 张图片",
-    "pdfSizeLimit": "文件过大，最大支持 20MB",
-    "pdfFormatError": "仅支持 PDF 格式文件"
+    "deleteFailed": "删除失败"
   },
   "workspace": {
     "select": "选择工作区",
