@@ -3,6 +3,13 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface ImageInput {
+  /** base64-encoded image data (no data URI prefix) */
+  base64: string;
+  /** MIME type, e.g. 'image/png', 'image/jpeg' */
+  mediaType: string;
+}
+
 export interface GenerateOptions {
   temperature?: number;
   maxTokens?: number;
@@ -10,6 +17,8 @@ export interface GenerateOptions {
   stopSequences?: string[];
   systemPrompt?: string;
   messages?: ChatMessage[];
+  /** Images to include in the prompt (for vision-capable models) */
+  images?: ImageInput[];
 }
 
 export interface ModelCapabilities {

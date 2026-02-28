@@ -120,8 +120,8 @@ marked.setOptions({
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li',
     'strong', 'em', 'code', 'pre', 'blockquote', 'table', 'thead',
-    'tbody', 'tr', 'th', 'td', 'a', 'hr', 'mark', 'del', 'input', 'span', 'div'],
-  ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'type', 'checked', 'disabled']
+    'tbody', 'tr', 'th', 'td', 'a', 'hr', 'mark', 'del', 'input', 'span', 'div', 'img'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'type', 'checked', 'disabled', 'src', 'alt', 'width', 'height']
 }
 
 function renderMarkdown(md: string): string {
