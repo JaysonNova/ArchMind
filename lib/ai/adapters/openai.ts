@@ -58,7 +58,7 @@ export class OpenAIAdapter implements AIModelAdapter {
     const response = await this.client.chat.completions.create({
       model: this.modelId,
       max_tokens: options?.maxTokens || 8192,
-      messages: this.buildMessages(prompt, options),
+      messages: this.buildMessages(prompt, options) as any,
       temperature: options?.temperature,
       top_p: options?.topP
     })
@@ -78,7 +78,7 @@ export class OpenAIAdapter implements AIModelAdapter {
     const stream = await this.client.chat.completions.create({
       model: this.modelId,
       max_tokens: options?.maxTokens || 8192,
-      messages: this.buildMessages(prompt, options),
+      messages: this.buildMessages(prompt, options) as any,
       temperature: options?.temperature,
       top_p: options?.topP,
       stream: true

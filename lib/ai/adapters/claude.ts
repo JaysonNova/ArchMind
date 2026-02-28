@@ -63,7 +63,7 @@ export class ClaudeAdapter implements AIModelAdapter {
       model: this.modelId,
       max_tokens: options?.maxTokens || 16384,
       system: systemPrompt,
-      messages,
+      messages: messages as any,
       temperature: options?.temperature,
       top_p: options?.topP
     })
@@ -84,7 +84,7 @@ export class ClaudeAdapter implements AIModelAdapter {
       model: this.modelId,
       max_tokens: options?.maxTokens || 16384,
       system: systemPrompt,
-      messages,
+      messages: messages as any,
       temperature: options?.temperature,
       top_p: options?.topP
     })
