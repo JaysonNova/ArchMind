@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS design_documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  workspace_id TEXT REFERENCES workspaces(id) ON DELETE CASCADE,
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
   title VARCHAR(500) NOT NULL,
   feishu_url TEXT,
   feishu_doc_title VARCHAR(500),
