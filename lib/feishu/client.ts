@@ -20,8 +20,8 @@ export class FeishuClient {
   private appSecret: string
 
   constructor(appId: string, appSecret: string) {
-    this.appId = appId
-    this.appSecret = appSecret
+    this.appId = appId.trim()
+    this.appSecret = appSecret.trim()
   }
 
   /**
