@@ -24,12 +24,70 @@
           <CardDescription>{{ $t('designDoc.generateDescription') }}</CardDescription>
         </CardHeader>
         <CardContent class="space-y-6">
-          <!-- Feishu URL Input -->
-          <FeishuInput
-            v-model="feishuUrl"
-            :disabled="generating"
-            @validated="handleFeishuValidated"
-          />
+          <!-- Source Selection Tabs -->
+          <Tabs v-model="inputSource" class="w-full">
+            <TabsList class="grid w-full grid-cols-2">
+              <TabsTrigger value="feishu" :disabled="generating">
+                {{ $t('designDoc.sourceFeishu') }}
+              </TabsTrigger>
+              <TabsTrigger value="pdf" :disabled="generating">
+                {{ $t('designDoc.sourcePdf') }}
+              </TabsTrigger>
+            </TabsList>
+
+            <!-- Feishu Input -->
+            <TabsContent value="feishu" class="mt-4">
+              <FeishuInput
+                v-model="feishuUrl"
+                :disabled="generating"
+                @validated="handleFeishuValidated"
+              />
+            </TabsContent>
+
+            <!-- PDF Upload -->
+            <TabsContent value="pdf" class="mt-4">
+              <div class="space-y-3">
+                <Label>{{ $t('designDoc.pdfUpload') }}</Label>
+                <div class="flex gap-2">
+                  <input
+                    ref="pdfFileInput"
+                    type="file"
+                    accept=".pdf"
+                    class="hidden"
+                    @change="handlePdfUpload"
+                  />
+                  <Button
+                    variant="outline"
+                    class="flex-1"
+                    :disabled="generating || pdfUploading"
+                    @click="pdfFileInput?.click()"
+                  >
+                    <Loader2 v-if="pdfUploading" class="w-4 h-4 mr-2 animate-spin" />
+                    <Upload v-else class="w-4 h-4 mr-2" />
+                    {{ pdfUploading ? $t('designDoc.pdfUploading') : (pdfData ? pdfData.title : $t('designDoc.pdfSelect')) }}
+                  </Button>
+                  <Button
+                    v-if="pdfData"
+                    variant="ghost"
+                    size="icon"
+                    :disabled="generating"
+                    @click="clearPdf"
+                  >
+                    <X class="w-4 h-4" />
+                  </Button>
+                </div>
+                <!-- PDF info -->
+                <div v-if="pdfData" class="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="secondary">
+                    {{ $t('designDoc.pdfInfo', { pages: pdfData.pageCount, chars: pdfData.textLength, images: pdfData.imageCount }) }}
+                  </Badge>
+                </div>
+                <p v-if="pdfData" class="text-xs text-muted-foreground/70 line-clamp-2">
+                  {{ pdfData.preview }}...
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <!-- Template Upload -->
           <div class="space-y-2">
@@ -131,7 +189,7 @@
           <Button
             class="w-full gap-2"
             size="lg"
-            :disabled="!feishuValidated || generating"
+            :disabled="!canGenerate || generating"
             @click="handleGenerate"
           >
             <Loader2 v-if="generating" class="w-4 h-4 animate-spin" />
@@ -278,6 +336,7 @@ import { Badge } from '~/components/ui/badge'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
 import { Textarea } from '~/components/ui/textarea'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '~/components/ui/select'
@@ -307,6 +366,7 @@ const { toast } = useToast()
 const aiModels = useAiModels()
 
 const showGenerator = ref(false)
+const inputSource = ref<'feishu' | 'pdf'>('feishu')
 const feishuUrl = ref('')
 const feishuValidated = ref(false)
 const feishuDocTitle = ref('')
@@ -314,6 +374,26 @@ const selectedModelId = ref('')
 const additionalContext = ref('')
 const generating = ref(false)
 const generatedContent = ref('')
+
+// PDF upload
+const pdfFileInput = ref<HTMLInputElement | null>(null)
+const pdfUploading = ref(false)
+const pdfData = ref<{
+  title: string
+  pageCount: number
+  textLength: number
+  imageCount: number
+  content: string
+  images: Array<{ base64: string; mediaType: string }>
+  preview: string
+} | null>(null)
+
+// Can generate: either feishu validated or pdf uploaded
+const canGenerate = computed(() => {
+  if (inputSource.value === 'feishu') return feishuValidated.value
+  if (inputSource.value === 'pdf') return !!pdfData.value
+  return false
+})
 
 // Template upload
 const templateFileInput = ref<HTMLInputElement | null>(null)
@@ -619,23 +699,78 @@ gantt
   })
 }
 
+async function handlePdfUpload(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  if (file.size > 20 * 1024 * 1024) {
+    toast({ title: t('designDoc.pdfSizeLimit'), variant: 'destructive' })
+    return
+  }
+
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    toast({ title: t('designDoc.pdfFormatError'), variant: 'destructive' })
+    return
+  }
+
+  pdfUploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('pdf', file)
+
+    const response = await $fetch<{ success: boolean; data: any }>('/api/v1/design-doc/upload-pdf', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (response.success) {
+      pdfData.value = response.data
+      toast({ title: t('designDoc.pdfUploadSuccess') })
+    }
+  } catch (err: any) {
+    toast({
+      title: t('designDoc.pdfUploadFailed'),
+      description: err.data?.message || err.message,
+      variant: 'destructive'
+    })
+  } finally {
+    pdfUploading.value = false
+    if (target) target.value = ''
+  }
+}
+
+function clearPdf() {
+  pdfData.value = null
+}
+
 async function handleGenerate() {
-  if (!feishuUrl.value || !feishuValidated.value) return
+  if (!canGenerate.value) return
 
   generating.value = true
   generatedContent.value = ''
 
   try {
+    const requestBody: Record<string, any> = {
+      modelId: selectedModelId.value || undefined,
+      additionalContext: additionalContext.value || undefined,
+      customTemplate: customTemplate.value || undefined,
+      maxTokens: 16384,
+      source: inputSource.value
+    }
+
+    if (inputSource.value === 'feishu') {
+      requestBody.feishuUrl = feishuUrl.value
+    } else if (inputSource.value === 'pdf' && pdfData.value) {
+      requestBody.pdfContent = pdfData.value.content
+      requestBody.pdfTitle = pdfData.value.title
+      requestBody.pdfImages = pdfData.value.images
+    }
+
     const response = await fetch('/api/v1/design-doc/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        feishuUrl: feishuUrl.value,
-        modelId: selectedModelId.value || undefined,
-        additionalContext: additionalContext.value || undefined,
-        customTemplate: customTemplate.value || undefined,
-        maxTokens: 16384
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {

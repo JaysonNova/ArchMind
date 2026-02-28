@@ -726,7 +726,18 @@
     "deleteConfirm": "Delete this design doc?",
     "deleteConfirmDesc": "This action cannot be undone. The design doc will be permanently deleted.",
     "deleteSuccess": "Deleted successfully",
-    "deleteFailed": "Delete failed"
+    "deleteFailed": "Delete failed",
+    "sourceFeishu": "Feishu Document",
+    "sourcePdf": "PDF Upload",
+    "pdfUpload": "Upload PDF File",
+    "pdfSelect": "Select PDF File",
+    "pdfUploading": "Uploading and parsing...",
+    "pdfUploaded": "Uploaded",
+    "pdfUploadSuccess": "PDF uploaded successfully",
+    "pdfUploadFailed": "PDF upload failed",
+    "pdfInfo": "{pages} pages | {chars} characters | {images} images",
+    "pdfSizeLimit": "File too large, max 20MB",
+    "pdfFormatError": "Only PDF format supported"
   },
   "workspace": {
     "select": "Select Workspace",

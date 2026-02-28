@@ -17,30 +17,59 @@ export default defineEventHandler(async (event) => {
     const userId = requireAuth(event)
     const body = await readBody<DesignDocGenerateRequest>(event)
 
-    if (!body.feishuUrl) {
+    // 验证输入源
+    const source = body.source || 'feishu'
+    if (source === 'feishu' && !body.feishuUrl) {
       setResponseStatus(event, 400)
       return { success: false, message: '请提供飞书文档链接' }
     }
-
-    const runtimeConfig = useRuntimeConfig()
-    const appId = runtimeConfig.feishuAppId as string
-    const appSecret = runtimeConfig.feishuAppSecret as string
-
-    if (!appId || !appSecret) {
-      setResponseStatus(event, 500)
-      return { success: false, message: '飞书应用未配置' }
+    if (source === 'pdf' && !body.pdfContent) {
+      setResponseStatus(event, 400)
+      return { success: false, message: '请先上传 PDF 文件' }
     }
 
-    // 解析飞书文档
-    const client = new FeishuClient(appId, appSecret)
-    const parser = new FeishuDocumentParser(client)
+    const runtimeConfig = useRuntimeConfig()
 
-    let feishuDoc
-    try {
-      feishuDoc = await parser.parseFromUrl(body.feishuUrl)
-    } catch (err: any) {
-      setResponseStatus(event, 502)
-      return { success: false, message: `飞书文档解析失败: ${err.message}` }
+    let docContent: string
+    let docTitle: string
+    let docUrl: string
+    let docImages: Array<{ base64: string; mediaType: string }> = []
+
+    if (source === 'pdf') {
+      // PDF 来源
+      docContent = body.pdfContent!
+      docTitle = body.pdfTitle || 'PDF 文档'
+      docUrl = `pdf://${docTitle}`
+      docImages = body.pdfImages || []
+    } else {
+      // 飞书来源
+      const appId = runtimeConfig.feishuAppId as string
+      const appSecret = runtimeConfig.feishuAppSecret as string
+
+      if (!appId || !appSecret) {
+        setResponseStatus(event, 500)
+        return { success: false, message: '飞书应用未配置' }
+      }
+
+      // 解析飞书文档
+      const client = new FeishuClient(appId, appSecret)
+      const parser = new FeishuDocumentParser(client)
+
+      let feishuDoc
+      try {
+        feishuDoc = await parser.parseFromUrl(body.feishuUrl!)
+      } catch (err: any) {
+        setResponseStatus(event, 502)
+        return { success: false, message: `飞书文档解析失败: ${err.message}` }
+      }
+
+      docContent = feishuDoc.content
+      docTitle = feishuDoc.title
+      docUrl = body.feishuUrl!
+      docImages = feishuDoc.images?.map((img: { base64: string; mediaType: string }) => ({
+        base64: img.base64,
+        mediaType: img.mediaType
+      })) || []
     }
 
     // 设置 SSE 响应头
@@ -51,9 +80,10 @@ export default defineEventHandler(async (event) => {
     event.node.res.write(
       `data: ${JSON.stringify({
         type: 'doc_parsed',
-        title: feishuDoc.title,
-        contentLength: feishuDoc.content.length,
-        imageCount: feishuDoc.images?.length || 0
+        title: docTitle,
+        contentLength: docContent.length,
+        imageCount: docImages.length,
+        source
       })}\n\n`
     )
 
@@ -89,10 +119,7 @@ export default defineEventHandler(async (event) => {
       workspaceId: body.workspaceId,
       additionalContext: body.additionalContext,
       customTemplate: body.customTemplate,
-      images: feishuDoc.images?.map((img: { base64: string; mediaType: string }) => ({
-        base64: img.base64,
-        mediaType: img.mediaType
-      }))
+      images: docImages
     }
 
     let attempt = 0
@@ -104,9 +131,9 @@ export default defineEventHandler(async (event) => {
 
       const generator = new DesignDocGenerator(config)
       const streamIterator = generator.generateStream(
-        feishuDoc.content,
-        feishuDoc.title,
-        body.feishuUrl,
+        docContent,
+        docTitle,
+        docUrl,
         { ...generationOpts, skipSave: true }
       )
 
@@ -140,9 +167,9 @@ export default defineEventHandler(async (event) => {
         const generator = new DesignDocGenerator(config)
         await generator.saveResult(
           fullContent,
-          feishuDoc.content,
-          feishuDoc.title,
-          body.feishuUrl,
+          docContent,
+          docTitle,
+          docUrl,
           generationOpts
         )
       } catch (saveErr) {
@@ -151,7 +178,7 @@ export default defineEventHandler(async (event) => {
     }
 
     event.node.res.write(
-      `data: ${JSON.stringify({ type: 'done', feishuDocTitle: feishuDoc.title })}\n\n`
+      `data: ${JSON.stringify({ type: 'done', docTitle })}\n\n`
     )
     event.node.res.end()
   } catch (error) {

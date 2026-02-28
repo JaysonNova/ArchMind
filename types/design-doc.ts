@@ -22,13 +22,18 @@ export interface DesignDocument {
 }
 
 export interface DesignDocGenerateRequest {
-  feishuUrl: string
+  feishuUrl?: string
   modelId?: string
   temperature?: number
   maxTokens?: number
   workspaceId?: string
   additionalContext?: string
   customTemplate?: string  // 自定义模板内容（Markdown 格式）
+  // PDF 来源字段
+  source?: 'feishu' | 'pdf'
+  pdfContent?: string       // PDF 解析后的文本内容
+  pdfTitle?: string          // PDF 文件名/标题
+  pdfImages?: Array<{ base64: string; mediaType: string }>  // PDF 提取的图片
 }
 
 export interface DesignDocGenerateResponse {
