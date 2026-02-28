@@ -5,15 +5,27 @@
 
 /**
  * 从模板中提取章节编号
- * 支持格式：## 1. 标题、## 1 标题、## 1、标题
+ * 支持格式：
+ * - ## 1. 标题 / ## 1 标题 / ## 1、标题（编号格式）
+ * - ## 标题（无编号，按出现顺序分配序号）
  */
 export function extractSectionsFromTemplate(template: string): Set<number> {
-  const sectionMatches = template.match(/^##\s*(\d{1,2})[.\s、]/gm) || []
+  // First try numbered format: ## N. / ## N / ## N、
+  const numberedMatches = template.match(/^##\s*(\d{1,2})[.\s、]/gm) || []
   const sectionNums = new Set<number>()
-  for (const line of sectionMatches) {
+  for (const line of numberedMatches) {
     const m = line.match(/^##\s*(\d{1,2})[.\s、]/)
     if (m) sectionNums.add(Number(m[1]))
   }
+
+  // If no numbered sections found, fall back to counting all ## headings
+  if (sectionNums.size === 0) {
+    const allH2Matches = template.match(/^##\s+[^#\n]+/gm) || []
+    for (let i = 0; i < allH2Matches.length; i++) {
+      sectionNums.add(i + 1)
+    }
+  }
+
   return sectionNums
 }
 
@@ -218,14 +230,69 @@ ${DESIGN_DOC_TEMPLATE}
 `
 
 /**
+ * 构建动态系统提示词
+ * 当提供自定义模板时，替换默认模板结构
+ */
+export function buildSystemPrompt(customTemplate?: string): string {
+  if (!customTemplate) {
+    return DESIGN_DOC_SYSTEM_PROMPT
+  }
+
+  const sectionCount = extractSectionsFromTemplate(customTemplate).size
+
+  return `你是一位资深的前端架构师，拥有 10 年以上的大型 Web 应用开发经验。你精通 Vue 3、React、TypeScript、Tailwind CSS 等主流前端技术栈。
+
+你的任务是：根据产品原型文档和用户提供的自定义模板，直接输出一份详细的、可直接指导开发的前端开发设计方案。
+
+## 关键规则（必须遵守）
+
+1. **直接输出 Markdown 文档内容**，严格按照用户提供的自定义模板结构输出
+2. **禁止输出任何引言、寒暄、解释性文字**，如"我来帮你生成..."、"以下是..."、"我将分步骤..."等
+3. **必须在一次回复中输出完整的全部 ${sectionCount} 个章节**，不要说"分步骤输出"或"由于篇幅..."
+4. **不要询问问题或请求确认**，直接生成完整文档
+5. **严格遵循自定义模板的章节结构和命名**，不要添加或删除章节
+
+## 输出要求
+
+1. **严格按照自定义模板结构输出**，不要遗漏任何章节
+2. **模板中包含 Mermaid 流程图的章节，必须输出 Mermaid 代码块**
+3. **组件设计要具体**：给出明确的 Props/Emits 接口定义（TypeScript 类型），不要泛泛而谈
+4. **API 对接要清晰**：根据原型推断需要的接口，给出 RESTful 风格的路径设计
+5. **类型定义要完整**：所有核心实体、请求/响应都要有 TypeScript 类型
+6. **任务拆解要实际**：给出合理的优先级和工时预估（以人天为单位）
+7. **技术选型要具体**：具体到用哪个库、哪个组件，而不是笼统的"使用 XX 技术"
+
+## 约束
+
+- 输出格式为 Markdown
+- 代码示例使用 TypeScript
+- 组件设计面向 Vue 3 Composition API（<script setup>）
+- 样式方案默认使用 Tailwind CSS
+- 状态管理默认使用 Pinia
+- 如果原型中出现表格/列表，考虑分页和虚拟滚动
+- 如果涉及表单，考虑 VeeValidate + Zod 校验方案
+
+## 自定义模板结构（严格遵循）
+
+${customTemplate}
+`
+}
+
+/**
  * 构建设计方案生成的完整 Prompt
+ * 当提供 customTemplate 时，使用自定义模板替代默认模板
  */
 export function buildDesignDocPrompt(
   feishuDocContent: string,
   feishuDocTitle: string,
-  additionalContext?: string
+  additionalContext?: string,
+  customTemplate?: string
 ): string {
-  let prompt = `根据以下产品原型文档，直接输出完整的前端开发设计方案（Markdown 格式，以 "# 前端开发设计方案" 开头，包含全部 10 个章节）。
+  const sectionCount = customTemplate
+    ? extractSectionsFromTemplate(customTemplate).size
+    : 10
+
+  let prompt = `根据以下产品原型文档，直接输出完整的前端开发设计方案（Markdown 格式，包含全部 ${sectionCount} 个章节）。
 
 ## 产品原型文档
 
@@ -237,6 +304,16 @@ ${feishuDocContent}
 > 注意：文档中标记为 [图片-N] 的位置对应附加的图片，请仔细分析这些图片（包括流程图、界面截图、架构图等）来辅助你的设计方案。
 `
 
+  if (customTemplate) {
+    prompt += `
+## 自定义模板
+
+请严格按照以下模板结构输出，不要遗漏任何章节：
+
+${customTemplate}
+`
+  }
+
   if (additionalContext) {
     prompt += `
 ## 补充说明
@@ -245,7 +322,7 @@ ${additionalContext}
   }
 
   prompt += `
-请现在直接开始输出设计方案，第一行必须是 "# 前端开发设计方案"，不要输出任何引言或解释。
+请现在直接开始输出设计方案，不要输出任何引言或解释。严格按照模板结构输出所有章节。
 `
 
   return prompt
