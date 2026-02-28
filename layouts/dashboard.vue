@@ -187,7 +187,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
-import { Moon, Sun, Sparkles, FolderOpen, Database, Plus, ChevronLeft, ChevronRight, Layout, LogOut, LogIn, Settings, Loader2 } from 'lucide-vue-next'
+import { Moon, Sun, Sparkles, FolderOpen, Database, Plus, ChevronLeft, ChevronRight, Layout, LogOut, LogIn, Settings, Loader2, FileCode2 } from 'lucide-vue-next'
 import { Button } from '~/components/ui/button'
 import {
   Breadcrumb,
@@ -251,7 +251,8 @@ const handleLogout = async () => {
 const menuItems = computed(() => [
   { to: '/app', label: t('nav.projects'), icon: FolderOpen },
   { to: '/knowledge-base', label: t('nav.knowledgeBase'), icon: Database },
-  { to: '/prototypes', label: t('prototype.title'), icon: Layout }
+  { to: '/prototypes', label: t('prototype.title'), icon: Layout },
+  { to: '/design-doc', label: t('nav.designDoc'), icon: FileCode2 }
 ])
 
 const isActive = (path: string) => {
@@ -263,6 +264,9 @@ const isActive = (path: string) => {
 
   // 特殊处理:原型编辑页面应该高亮原型列表
   if (path === '/prototypes' && route.path.startsWith('/prototype/')) return true
+
+  // 设计方案页面
+  if (path === '/design-doc' && route.path.startsWith('/design-doc')) return true
 
   return false
 }
@@ -298,6 +302,11 @@ const breadcrumbItems = computed(() => {
 
   if (path === '/prototypes') {
     items.push({ label: t('prototype.title') })
+    return items
+  }
+
+  if (path === '/design-doc') {
+    items.push({ label: t('nav.designDoc') })
     return items
   }
 

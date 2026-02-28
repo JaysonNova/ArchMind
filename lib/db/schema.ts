@@ -359,6 +359,33 @@ export const assets = pgTable('assets', {
 }))
 
 // ============================================
+// 前端设计方案表
+// ============================================
+export const designDocuments = pgTable('design_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  workspaceId: text('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  feishuUrl: text('feishu_url'),
+  feishuDocTitle: varchar('feishu_doc_title', { length: 500 }),
+  feishuDocContent: text('feishu_doc_content'),
+  content: text('content').notNull(),
+  modelUsed: varchar('model_used', { length: 100 }),
+  generationTime: integer('generation_time'),
+  tokenCount: integer('token_count'),
+  estimatedCost: decimal('estimated_cost', { precision: 10, scale: 6 }),
+  status: varchar('status', { length: 20 }).default('draft'),
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  userIdIdx: index('idx_design_docs_user_id').on(table.userId),
+  workspaceIdIdx: index('idx_design_docs_workspace_id').on(table.workspaceId),
+  createdAtIdx: index('idx_design_docs_created_at').on(table.createdAt),
+  statusIdx: index('idx_design_docs_status').on(table.status)
+}))
+
+// ============================================
 // PRD-资源关联表
 // ============================================
 export const prdAssets = pgTable('prd_assets', {

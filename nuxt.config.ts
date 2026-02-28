@@ -103,6 +103,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+    anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL,
     openaiApiKey: process.env.OPENAI_API_KEY,
     googleApiKey: process.env.GOOGLE_API_KEY,
     glmApiKey: process.env.GLM_API_KEY,
@@ -117,6 +118,8 @@ export default defineNuxtConfig({
     emailUser: process.env.EMAIL_USER,
     emailPass: process.env.EMAIL_PASS,
     emailFrom: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    feishuAppId: process.env.FEISHU_APP_ID,
+    feishuAppSecret: process.env.FEISHU_APP_SECRET,
     public: {
       appUrl: process.env.APP_URL || 'http://localhost:3000',
       baseUrl: process.env.BASE_URL || process.env.APP_URL || 'http://localhost:3000',
@@ -158,7 +161,9 @@ export default defineNuxtConfig({
       '/api/stats/**': { redirect: { to: '/api/v1/stats/**', statusCode: 307 } },
       '/api/tags/**': { redirect: { to: '/api/v1/tags/**', statusCode: 307 } },
       '/api/user/**': { redirect: { to: '/api/v1/user/**', statusCode: 307 } },
-      '/api/workspaces/**': { redirect: { to: '/api/v1/workspaces/**', statusCode: 307 } }
+      '/api/workspaces/**': { redirect: { to: '/api/v1/workspaces/**', statusCode: 307 } },
+      '/api/feishu/**': { redirect: { to: '/api/v1/feishu/**', statusCode: 307 } },
+      '/api/design-doc/**': { redirect: { to: '/api/v1/design-doc/**', statusCode: 307 } }
     }
   },
 
