@@ -843,7 +843,7 @@
     "pdfUploadSuccess": "PDF uploaded successfully",
     "pdfUploadFailed": "PDF upload failed",
     "pdfInfo": "{pages} pages | {chars} characters | {images} images",
-    "pdfSizeLimit": "File too large, max 20MB",
+    "pdfSizeLimit": "File too large, max 50MB",
     "pdfFormatError": "Only PDF format supported"
   },
   "workspace": {

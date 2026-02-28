@@ -15,8 +15,8 @@ import type { ParsedPDF, PDFImage, PDFParseOptions } from './types'
 
 const execAsync = promisify(exec)
 
-const DEFAULT_MAX_IMAGES = 20
-const DEFAULT_MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
+const DEFAULT_MAX_IMAGES = 50
+const DEFAULT_MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
 
 export class PDFParser {
   private maxImages: number

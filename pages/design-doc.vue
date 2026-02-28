@@ -704,7 +704,7 @@ async function handlePdfUpload(event: Event) {
   const file = target.files?.[0]
   if (!file) return
 
-  if (file.size > 20 * 1024 * 1024) {
+  if (file.size > 50 * 1024 * 1024) {
     toast({ title: t('designDoc.pdfSizeLimit'), variant: 'destructive' })
     return
   }

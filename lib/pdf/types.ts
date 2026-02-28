@@ -22,6 +22,6 @@ export interface PDFImage {
 export interface PDFParseOptions {
   extractImages?: boolean
   usePoppler?: boolean
-  maxImages?: number
-  maxImageSize?: number
+  maxImages?: number      // Default: 50
+  maxImageSize?: number   // Default: 10MB
 }

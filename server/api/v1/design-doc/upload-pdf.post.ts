@@ -6,7 +6,7 @@
 import { PDFParser } from '~/lib/pdf/parser'
 import { requireAuth } from '~/server/utils/auth-helpers'
 
-const MAX_PDF_SIZE = 20 * 1024 * 1024 // 20MB
+const MAX_PDF_SIZE = 50 * 1024 * 1024 // 50MB
 
 export default defineEventHandler(async (event) => {
   try {

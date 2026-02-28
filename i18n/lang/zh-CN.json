@@ -856,7 +856,7 @@
     "pdfUploadSuccess": "PDF 上传成功",
     "pdfUploadFailed": "PDF 上传失败",
     "pdfInfo": "{pages} 页 | {chars} 字符 | {images} 张图片",
-    "pdfSizeLimit": "文件过大，最大支持 20MB",
+    "pdfSizeLimit": "文件过大，最大支持 50MB",
     "pdfFormatError": "仅支持 PDF 格式文件"
   },
   "workspace": {
