@@ -364,7 +364,7 @@ export const assets = pgTable('assets', {
 export const designDocuments = pgTable('design_documents', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  workspaceId: text('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
+  workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
   title: varchar('title', { length: 500 }).notNull(),
   feishuUrl: text('feishu_url'),
   feishuDocTitle: varchar('feishu_doc_title', { length: 500 }),
@@ -383,6 +383,23 @@ export const designDocuments = pgTable('design_documents', {
   workspaceIdIdx: index('idx_design_docs_workspace_id').on(table.workspaceId),
   createdAtIdx: index('idx_design_docs_created_at').on(table.createdAt),
   statusIdx: index('idx_design_docs_status').on(table.status)
+}))
+
+// ============================================
+// Logic Maps 表
+// ============================================
+export const logicMaps = pgTable('logic_maps', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  prdId: uuid('prd_id').references(() => prdDocuments.id, { onDelete: 'cascade' }).notNull(),
+  nodesData: jsonb('nodes_data').notNull(),
+  edgesData: jsonb('edges_data').notNull(),
+  summary: text('summary'),
+  metadata: jsonb('metadata').default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (table) => ({
+  prdIdIdx: uniqueIndex('idx_logic_maps_prd_id').on(table.prdId),
+  createdAtIdx: index('idx_logic_maps_created_at').on(table.createdAt)
 }))
 
 // ============================================
