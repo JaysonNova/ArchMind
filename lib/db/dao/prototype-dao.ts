@@ -73,7 +73,7 @@ export class PrototypeDAO {
       const sql = `
         SELECT p.* FROM prototypes p
         LEFT JOIN prd_documents prd ON p.prd_id = prd.id
-        WHERE (prd.workspace_id = $${paramIndex} OR (p.prd_id IS NULL AND $${paramIndex} = 'default'))
+        WHERE (prd.workspace_id = $${paramIndex}::uuid OR p.prd_id IS NULL)
         ${whereClause}
         ORDER BY p.${orderBy} ${order}
         LIMIT $${paramIndex + 1} OFFSET $${paramIndex + 2}
@@ -141,7 +141,7 @@ export class PrototypeDAO {
       const sql = `
         SELECT COUNT(*) as count FROM prototypes p
         LEFT JOIN prd_documents prd ON p.prd_id = prd.id
-        WHERE (prd.workspace_id = $${paramIndex} OR (p.prd_id IS NULL AND $${paramIndex} = 'default'))
+        WHERE (prd.workspace_id = $${paramIndex}::uuid OR p.prd_id IS NULL)
         ${whereClause}
       `
       const result = await dbClient.query<{ count: string }>(sql, params)

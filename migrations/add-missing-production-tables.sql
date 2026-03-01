@@ -46,8 +46,26 @@ CREATE TABLE IF NOT EXISTS logic_maps (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_logic_maps_prd_id ON logic_maps(prd_id);
+CREATE INDEX IF NOT EXISTS idx_logic_maps_prd_id ON logic_maps(prd_id);
 CREATE INDEX IF NOT EXISTS idx_logic_maps_created_at ON logic_maps(created_at);
+
+-- ============================================
+-- 2.5. 文档向量表（多模型支持）
+-- ============================================
+CREATE TABLE IF NOT EXISTS document_embeddings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  chunk_id UUID NOT NULL REFERENCES document_chunks(id) ON DELETE CASCADE,
+  model_name VARCHAR(100) NOT NULL,
+  model_provider VARCHAR(50) NOT NULL,
+  model_dimensions INTEGER NOT NULL,
+  embedding vector,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(chunk_id, model_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_embeddings_chunk_id ON document_embeddings(chunk_id);
+CREATE INDEX IF NOT EXISTS idx_document_embeddings_model_name ON document_embeddings(model_name);
 
 -- ============================================
 -- 3. 工作区成员表
